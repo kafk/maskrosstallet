@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v4.5</title>
+    <title>Maskrosstallet - Schema & Administration v4.6</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- Firebase SDK - loaded synchronously -->
@@ -984,7 +984,7 @@
                     <span>Grundat 2022 • Gamlestaden</span>
                 </div>
             </div>
-            <div class="version-badge">Version 4.5</div>
+            <div class="version-badge">Version 4.6</div>
         </div>
     </header>
 
@@ -1413,6 +1413,10 @@
             document.getElementById(`modal-${type}`).classList.add('active');
             if (type === 'booking') {
                 populateBookingDropdowns();
+                // Pre-fill with selected date from calendar
+                if (selectedDate) {
+                    document.getElementById('booking-date').value = formatDateForBooking(selectedDate);
+                }
             }
         }
 
