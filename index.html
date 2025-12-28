@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v4.9</title>
+    <title>Maskrosstallet - Schema & Administration v5.0</title>
+    
+    <!-- Förhindra cachning -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- Firebase SDK - loaded synchronously -->
@@ -1340,7 +1346,7 @@
         // =====================================================
         // VERSION CONTROL - Ändra detta vid varje uppdatering
         // =====================================================
-        const APP_VERSION = "4.9";
+        const APP_VERSION = "5.0";
 
         // =====================================================
         // Firebase Initialization
@@ -2131,8 +2137,20 @@
                 const serverVersion = doc.data().minVersion;
                 
                 if (compareVersions(APP_VERSION, serverVersion) < 0) {
-                    // Klientens version är för gammal
-                    showUpdateRequired(serverVersion);
+                    // Klientens version är för gammal - AUTO RELOAD
+                    console.log('🔄 Gammal version upptäckt - laddar om automatiskt...');
+                    
+                    // Rensa cache och ladda om automatiskt
+                    if ('caches' in window) {
+                        caches.keys().then(names => {
+                            names.forEach(name => caches.delete(name));
+                        });
+                    }
+                    localStorage.removeItem('maskrosstallet_data');
+                    
+                    // Lägg till timestamp för att tvinga ny version
+                    const newUrl = window.location.pathname + '?v=' + Date.now();
+                    window.location.replace(newUrl);
                     return false;
                 }
                 
