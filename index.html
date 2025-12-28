@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v5.0</title>
+    <title>Maskrosstallet - Schema & Administration v5.1</title>
     
     <!-- Förhindra cachning -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -1346,7 +1346,7 @@
         // =====================================================
         // VERSION CONTROL - Ändra detta vid varje uppdatering
         // =====================================================
-        const APP_VERSION = "5.0";
+        const APP_VERSION = "5.1";
 
         // =====================================================
         // Firebase Initialization
@@ -1442,6 +1442,10 @@
             if (type === 'horse') {
                 delete document.getElementById('modal-horse').dataset.editingId;
                 document.querySelector('#modal-horse .modal-header h3').textContent = 'Lägg till häst';
+            }
+            if (type === 'course') {
+                delete document.getElementById('modal-course').dataset.editingId;
+                document.querySelector('#modal-course .modal-header h3').textContent = 'Lägg till kurs';
             }
         }
 
@@ -1579,8 +1583,9 @@
         }
 
         function saveCourse() {
-            const course = {
-                id: Date.now(),
+            const editingId = document.getElementById('modal-course').dataset.editingId;
+            
+            const courseData = {
                 name: document.getElementById('course-name').value,
                 level: document.getElementById('course-level').value,
                 duration: parseInt(document.getElementById('course-duration').value),
@@ -1588,12 +1593,25 @@
                 type: document.getElementById('course-type').value
             };
 
-            if (!course.name) {
+            if (!courseData.name) {
                 alert('Vänligen fyll i kursnamn');
                 return;
             }
 
-            data.courses.push(course);
+            if (editingId) {
+                // Edit existing course
+                const course = data.courses.find(c => c.id === parseInt(editingId));
+                if (course) {
+                    Object.assign(course, courseData);
+                }
+                delete document.getElementById('modal-course').dataset.editingId;
+                document.querySelector('#modal-course .modal-header h3').textContent = 'Lägg till kurs';
+            } else {
+                // Add new course
+                courseData.id = Date.now();
+                data.courses.push(courseData);
+            }
+
             closeModal('course');
             renderCourses();
             updateStats();
@@ -1601,9 +1619,37 @@
             clearForm('course');
         }
 
+        function editCourse(id) {
+            const course = data.courses.find(c => c.id === id);
+            if (!course) return;
+
+            document.getElementById('course-name').value = course.name || '';
+            document.getElementById('course-level').value = course.level || 'P';
+            document.getElementById('course-duration').value = course.duration || 45;
+            document.getElementById('course-max').value = course.maxParticipants || 6;
+            document.getElementById('course-type').value = course.type || '';
+
+            document.getElementById('modal-course').dataset.editingId = id;
+            document.querySelector('#modal-course .modal-header h3').textContent = 'Redigera kurs';
+            openModal('course');
+        }
+
+        function deleteCourse(id) {
+            const course = data.courses.find(c => c.id === id);
+            if (confirm(`Är du säker på att du vill ta bort kursen "${course ? course.name : ''}"?`)) {
+                data.courses = data.courses.filter(c => c.id !== id);
+                // Also remove bookings for this course
+                data.bookings = data.bookings.filter(b => b.courseId !== id);
+                renderCourses();
+                renderSchedule();
+                updateStats();
+                saveData();
+            }
+        }
+
         function clearForm(type) {
             document.querySelectorAll(`#modal-${type} input, #modal-${type} select`).forEach(el => {
-                if (el.type === 'text' || el.type === 'email' || el.type === 'tel' || el.type === 'number' || el.type === 'file') {
+                if (el.type === 'text' || el.type === 'email' || el.type === 'tel' || el.type === 'number' || el.type === 'file' || el.type === 'date') {
                     el.value = '';
                 }
             });
@@ -1752,6 +1798,10 @@
                                 <span>Nivå:</span>
                                 <strong>${c.level === 'P' ? 'Ponny' : c.level === 'J' ? 'Junior' : c.level === 'S' ? 'Senior' : 'Specialkurs'}</strong>
                             </div>
+                        </div>
+                        <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                            <button class="btn btn-small" onclick="editCourse(${c.id})">✏️ Redigera</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteCourse(${c.id})">🗑️ Ta bort</button>
                         </div>
                     </div>
                 `;
