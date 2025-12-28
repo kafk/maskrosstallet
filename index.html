@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v5.2</title>
+    <title>Maskrosstallet - Schema & Administration v5.3</title>
     
     <!-- Förhindra cachning -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -812,6 +812,91 @@
             border-color: var(--gold);
         }
 
+        /* Group member selection */
+        .group-members-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            background: var(--cream);
+            border-radius: 8px;
+        }
+
+        .group-member-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            background: var(--white);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .group-member-checkbox:hover {
+            background: var(--gold-light);
+        }
+
+        .group-member-checkbox input {
+            cursor: pointer;
+        }
+
+        .group-member-checkbox.selected {
+            background: var(--gold);
+        }
+
+        /* Group card */
+        .group-card {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px var(--shadow);
+        }
+
+        .group-card-header {
+            background: linear-gradient(135deg, var(--forest-medium), var(--forest-light));
+            padding: 1rem 1.5rem;
+            color: var(--white);
+        }
+
+        .group-card-header h4 {
+            font-family: 'Playfair Display', serif;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .group-card-header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .group-card-body {
+            padding: 1.5rem;
+        }
+
+        .group-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .group-members-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 1rem;
+        }
+
+        .group-member-tag {
+            background: var(--cream);
+            padding: 0.3rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+
         .course-card {
             background: var(--white);
             border-radius: 12px;
@@ -1084,6 +1169,7 @@
             <li><button data-tab="members">👥 Medlemmar</button></li>
             <li><button data-tab="horses">🐎 Hästar</button></li>
             <li><button data-tab="courses">📚 Kurser</button></li>
+            <li><button data-tab="groups">👨‍👩‍👧‍👦 Grupper</button></li>
             <li><button data-tab="settings">⚙️ Inställningar</button></li>
         </ul>
     </nav>
@@ -1185,6 +1271,15 @@
                 <button class="btn btn-primary" onclick="openModal('course')">+ Lägg till kurs</button>
             </div>
             <div id="courses-grid" class="courses-grid"></div>
+        </div>
+
+        <!-- Groups Tab -->
+        <div id="groups" class="tab-content">
+            <div class="section-header">
+                <h2>👨‍👩‍👧‍👦 Grupper</h2>
+                <button class="btn btn-primary" onclick="openModal('group')">+ Skapa grupp</button>
+            </div>
+            <div id="groups-grid" class="card-grid"></div>
         </div>
 
         <!-- Settings Tab -->
@@ -1504,6 +1599,68 @@
         </div>
     </div>
 
+    <!-- Group Modal -->
+    <div class="modal-overlay" id="modal-group">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Skapa grupp</h3>
+                <button class="modal-close" onclick="closeModal('group')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Gruppnamn</label>
+                    <input type="text" id="group-name">
+                </div>
+                <div class="form-group">
+                    <label>Beskrivning</label>
+                    <input type="text" id="group-description">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Dag</label>
+                        <select id="group-day">
+                            <option value="Måndag">Måndag</option>
+                            <option value="Tisdag">Tisdag</option>
+                            <option value="Onsdag">Onsdag</option>
+                            <option value="Torsdag">Torsdag</option>
+                            <option value="Fredag">Fredag</option>
+                            <option value="Lördag">Lördag</option>
+                            <option value="Söndag">Söndag</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tid</label>
+                        <select id="group-time">
+                            <option value="09:00">09:00</option>
+                            <option value="10:00">10:00</option>
+                            <option value="11:00">11:00</option>
+                            <option value="12:00">12:00</option>
+                            <option value="13:00">13:00</option>
+                            <option value="14:00">14:00</option>
+                            <option value="15:00">15:00</option>
+                            <option value="16:00">16:00</option>
+                            <option value="17:00">17:00</option>
+                            <option value="18:00">18:00</option>
+                            <option value="19:00">19:00</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Kurs</label>
+                    <select id="group-course"></select>
+                </div>
+                <div class="form-group">
+                    <label>Medlemmar i gruppen</label>
+                    <div id="group-members-list" class="group-members-select"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('group')">Avbryt</button>
+                <button class="btn btn-primary" onclick="saveGroup()">Spara grupp</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // =====================================================
         // FIREBASE CONFIGURATION
@@ -1524,7 +1681,7 @@
         // =====================================================
         // VERSION CONTROL - Ändra detta vid varje uppdatering
         // =====================================================
-        const APP_VERSION = "5.2";
+        const APP_VERSION = "5.3";
 
         // =====================================================
         // Firebase Initialization
@@ -1583,6 +1740,7 @@
             horses: [],
             courses: [],
             bookings: [],
+            groups: [],
             settings: {
                 levels: ['Blå', 'Gul', 'Grön', 'Röd', 'Vit', 'Nybörjare Grupp', 'Prova på'],
                 horseTypes: ['A ponny', 'B ponny', 'C ponny', 'G Ponny', 'Storhäst'],
@@ -1620,6 +1778,9 @@
                     document.getElementById('booking-date').value = formatDateForBooking(selectedDate);
                 }
             }
+            if (type === 'group') {
+                populateGroupDropdowns();
+            }
         }
 
         function closeModal(type) {
@@ -1637,6 +1798,10 @@
             if (type === 'course') {
                 delete document.getElementById('modal-course').dataset.editingId;
                 document.querySelector('#modal-course .modal-header h3').textContent = 'Lägg till kurs';
+            }
+            if (type === 'group') {
+                delete document.getElementById('modal-group').dataset.editingId;
+                document.querySelector('#modal-group .modal-header h3').textContent = 'Skapa grupp';
             }
         }
 
@@ -2346,6 +2511,7 @@
                         horses: data.horses,
                         courses: data.courses,
                         bookings: data.bookings,
+                        groups: data.groups,
                         settings: data.settings,
                         appVersion: APP_VERSION,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2480,6 +2646,9 @@
                         if (loadedData.bookings) {
                             data.bookings = loadedData.bookings;
                         }
+                        if (loadedData.groups) {
+                            data.groups = loadedData.groups;
+                        }
                         if (loadedData.settings) {
                             data.settings = loadedData.settings;
                         }
@@ -2508,6 +2677,9 @@
                 }
                 if (loadedData.bookings) {
                     data.bookings = loadedData.bookings;
+                }
+                if (loadedData.groups) {
+                    data.groups = loadedData.groups;
                 }
                 if (loadedData.settings) {
                     data.settings = loadedData.settings;
@@ -2611,6 +2783,7 @@
             renderMembers();
             renderHorses();
             renderCourses();
+            renderGroups();
             renderSchedule();
             renderTodayBookings();
             renderSettings();
@@ -2623,6 +2796,168 @@
             document.getElementById('version-badge').textContent = 'v' + APP_VERSION;
             
             console.log('✅ App startad (v' + APP_VERSION + ')');
+        }
+
+        // =====================================================
+        // Group Functions
+        // =====================================================
+
+        function populateGroupDropdowns() {
+            // Populate courses
+            const courseSelect = document.getElementById('group-course');
+            courseSelect.innerHTML = data.courses.map(c => 
+                `<option value="${c.id}">${c.name}</option>`
+            ).join('');
+
+            // Populate members with checkboxes
+            const membersList = document.getElementById('group-members-list');
+            membersList.innerHTML = data.members.map(m => `
+                <label class="group-member-checkbox">
+                    <input type="checkbox" value="${m.id}" onchange="toggleMemberSelection(this)">
+                    <span>${m.firstname}</span>
+                </label>
+            `).join('');
+        }
+
+        function toggleMemberSelection(checkbox) {
+            const label = checkbox.parentElement;
+            if (checkbox.checked) {
+                label.classList.add('selected');
+            } else {
+                label.classList.remove('selected');
+            }
+        }
+
+        function getSelectedGroupMembers() {
+            const checkboxes = document.querySelectorAll('#group-members-list input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => parseInt(cb.value));
+        }
+
+        function renderGroups() {
+            const grid = document.getElementById('groups-grid');
+            
+            if (!data.groups || data.groups.length === 0) {
+                grid.innerHTML = `
+                    <div class="card" style="grid-column: 1/-1; text-align: center; padding: 2rem;">
+                        <p style="color: var(--forest-light);">Inga grupper skapade än</p>
+                        <button class="btn btn-primary" style="margin-top: 1rem;" onclick="openModal('group')">+ Skapa första gruppen</button>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = data.groups.map(g => {
+                const course = data.courses.find(c => c.id === g.courseId);
+                const groupMembers = g.memberIds ? g.memberIds.map(id => {
+                    const member = data.members.find(m => m.id === id);
+                    return member ? member.firstname : 'Okänd';
+                }) : [];
+
+                return `
+                    <div class="group-card">
+                        <div class="group-card-header">
+                            <h4>${g.name}</h4>
+                            <p>${g.description || ''}</p>
+                        </div>
+                        <div class="group-card-body">
+                            <div class="group-info-row">
+                                <span>Dag & tid:</span>
+                                <strong>${g.day} ${g.time}</strong>
+                            </div>
+                            <div class="group-info-row">
+                                <span>Kurs:</span>
+                                <strong>${course ? course.name : 'Okänd'}</strong>
+                            </div>
+                            <div class="group-info-row">
+                                <span>Antal:</span>
+                                <strong>${groupMembers.length} medlemmar</strong>
+                            </div>
+                            <div class="group-members-list">
+                                ${groupMembers.map(name => `<span class="group-member-tag">${name}</span>`).join('')}
+                            </div>
+                            <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                <button class="btn btn-small" onclick="editGroup(${g.id})">✏️ Redigera</button>
+                                <button class="btn btn-small btn-danger" onclick="deleteGroup(${g.id})">🗑️ Ta bort</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function saveGroup() {
+            const editingId = document.getElementById('modal-group').dataset.editingId;
+            
+            const groupData = {
+                name: document.getElementById('group-name').value,
+                description: document.getElementById('group-description').value,
+                day: document.getElementById('group-day').value,
+                time: document.getElementById('group-time').value,
+                courseId: parseInt(document.getElementById('group-course').value),
+                memberIds: getSelectedGroupMembers()
+            };
+
+            if (!groupData.name) {
+                alert('Vänligen fyll i gruppnamn');
+                return;
+            }
+
+            if (editingId) {
+                // Edit existing group
+                const group = data.groups.find(g => g.id === parseInt(editingId));
+                if (group) {
+                    Object.assign(group, groupData);
+                }
+                delete document.getElementById('modal-group').dataset.editingId;
+                document.querySelector('#modal-group .modal-header h3').textContent = 'Skapa grupp';
+            } else {
+                // Add new group
+                groupData.id = Date.now();
+                if (!data.groups) data.groups = [];
+                data.groups.push(groupData);
+            }
+
+            closeModal('group');
+            renderGroups();
+            saveData();
+        }
+
+        function editGroup(id) {
+            const group = data.groups.find(g => g.id === id);
+            if (!group) return;
+
+            document.getElementById('group-name').value = group.name || '';
+            document.getElementById('group-description').value = group.description || '';
+            document.getElementById('group-day').value = group.day || 'Måndag';
+            document.getElementById('group-time').value = group.time || '09:00';
+            
+            populateGroupDropdowns();
+            
+            document.getElementById('group-course').value = group.courseId || '';
+            
+            // Check the members
+            if (group.memberIds) {
+                group.memberIds.forEach(memberId => {
+                    const checkbox = document.querySelector(`#group-members-list input[value="${memberId}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        checkbox.parentElement.classList.add('selected');
+                    }
+                });
+            }
+
+            document.getElementById('modal-group').dataset.editingId = id;
+            document.querySelector('#modal-group .modal-header h3').textContent = 'Redigera grupp';
+            openModal('group');
+        }
+
+        function deleteGroup(id) {
+            const group = data.groups.find(g => g.id === id);
+            if (confirm(`Är du säker på att du vill ta bort gruppen "${group ? group.name : ''}"?`)) {
+                data.groups = data.groups.filter(g => g.id !== id);
+                renderGroups();
+                saveData();
+            }
         }
 
         // =====================================================
