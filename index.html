@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v4.8</title>
+    <title>Maskrosstallet - Schema & Administration v4.9</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- Firebase SDK - loaded synchronously -->
@@ -984,7 +984,7 @@
                     <span>Grundat 2022 • Gamlestaden</span>
                 </div>
             </div>
-            <div class="version-badge">Version 4.8</div>
+            <div class="version-badge" id="version-badge">Version 4.8</div>
         </div>
     </header>
 
@@ -1340,7 +1340,7 @@
         // =====================================================
         // VERSION CONTROL - Ändra detta vid varje uppdatering
         // =====================================================
-        const APP_VERSION = "4.8";
+        const APP_VERSION = "4.9";
 
         // =====================================================
         // Firebase Initialization
@@ -2351,6 +2351,9 @@
             
             // Hide loading
             document.getElementById('loading-overlay').classList.add('hidden');
+            
+            // Update version badge
+            document.getElementById('version-badge').textContent = 'v' + APP_VERSION;
             
             console.log('✅ App startad (v' + APP_VERSION + ')');
         }
