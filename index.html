@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v4.7</title>
+    <title>Maskrosstallet - Schema & Administration v4.8</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- Firebase SDK - loaded synchronously -->
@@ -984,7 +984,7 @@
                     <span>Grundat 2022 • Gamlestaden</span>
                 </div>
             </div>
-            <div class="version-badge">Version 4.7</div>
+            <div class="version-badge">Version 4.8</div>
         </div>
     </header>
 
@@ -1336,6 +1336,11 @@
             appId: "1:672312068520:web:5eefb4e1e069b101b4f59d",
             measurementId: "G-J72WPJRP3D"
         };
+
+        // =====================================================
+        // VERSION CONTROL - Ändra detta vid varje uppdatering
+        // =====================================================
+        const APP_VERSION = "4.8";
 
         // =====================================================
         // Firebase Initialization
@@ -2094,13 +2099,105 @@
                         horses: data.horses,
                         courses: data.courses,
                         bookings: data.bookings,
+                        appVersion: APP_VERSION,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    console.log('✅ Data sparad till Firebase');
+                    console.log('✅ Data sparad till Firebase (v' + APP_VERSION + ')');
                 } catch (error) {
                     console.error('❌ Firebase save error:', error);
                 }
             }
+        }
+
+        // =====================================================
+        // Version Control - Kontrollera att appen är uppdaterad
+        // =====================================================
+        async function checkVersion() {
+            if (!useFirebase || !db) return true;
+            
+            try {
+                const doc = await db.collection('settings').doc('appVersion').get();
+                
+                if (!doc.exists) {
+                    // Första gången - spara nuvarande version
+                    await db.collection('settings').doc('appVersion').set({
+                        minVersion: APP_VERSION,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log('✅ Version registrerad: ' + APP_VERSION);
+                    return true;
+                }
+                
+                const serverVersion = doc.data().minVersion;
+                
+                if (compareVersions(APP_VERSION, serverVersion) < 0) {
+                    // Klientens version är för gammal
+                    showUpdateRequired(serverVersion);
+                    return false;
+                }
+                
+                console.log('✅ Version OK: ' + APP_VERSION);
+                return true;
+                
+            } catch (error) {
+                console.error('Version check error:', error);
+                return true; // Tillåt vid fel
+            }
+        }
+
+        function compareVersions(v1, v2) {
+            const parts1 = v1.split('.').map(Number);
+            const parts2 = v2.split('.').map(Number);
+            
+            for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+                const p1 = parts1[i] || 0;
+                const p2 = parts2[i] || 0;
+                if (p1 < p2) return -1;
+                if (p1 > p2) return 1;
+            }
+            return 0;
+        }
+
+        function showUpdateRequired(requiredVersion) {
+            document.getElementById('loading-overlay').innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">🔄</div>
+                    <h2 style="color: var(--forest-deep); margin-bottom: 1rem;">Uppdatering krävs</h2>
+                    <p style="color: var(--forest-medium); margin-bottom: 0.5rem;">
+                        Din version: <strong>${APP_VERSION}</strong>
+                    </p>
+                    <p style="color: var(--forest-medium); margin-bottom: 1.5rem;">
+                        Krävd version: <strong>${requiredVersion}</strong>
+                    </p>
+                    <button onclick="forceRefresh()" style="
+                        background: var(--gold);
+                        color: var(--forest-deep);
+                        border: none;
+                        padding: 1rem 2rem;
+                        font-size: 1.1rem;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                    ">
+                        🔄 Uppdatera nu
+                    </button>
+                    <p style="color: var(--forest-light); margin-top: 1rem; font-size: 0.9rem;">
+                        Klicka på knappen eller tryck Ctrl+Shift+R
+                    </p>
+                </div>
+            `;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function forceRefresh() {
+            // Rensa cache och ladda om
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => caches.delete(name));
+                });
+            }
+            localStorage.removeItem('maskrosstallet_data');
+            window.location.reload(true);
         }
 
         async function loadData() {
@@ -2234,6 +2331,13 @@
             // Initialize Firebase
             initFirebase();
             
+            // Check version - stop if outdated
+            const versionOK = await checkVersion();
+            if (!versionOK) {
+                console.log('❌ Version för gammal - uppdatering krävs');
+                return; // Stoppa här om versionen är för gammal
+            }
+            
             // Load data
             await loadData();
             
@@ -2247,6 +2351,8 @@
             
             // Hide loading
             document.getElementById('loading-overlay').classList.add('hidden');
+            
+            console.log('✅ App startad (v' + APP_VERSION + ')');
         }
 
         // Start the app when everything is loaded
