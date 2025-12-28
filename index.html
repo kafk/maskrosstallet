@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v5.1</title>
+    <title>Maskrosstallet - Schema & Administration v5.2</title>
     
     <!-- Förhindra cachning -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -729,6 +729,89 @@
             margin-bottom: 2rem;
         }
 
+        /* Settings Styles */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .settings-card {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px var(--shadow);
+        }
+
+        .settings-card-header {
+            background: linear-gradient(135deg, var(--forest-medium), var(--forest-light));
+            padding: 1rem 1.5rem;
+        }
+
+        .settings-card-header h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--white);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .settings-card-body {
+            padding: 1.5rem;
+        }
+
+        .settings-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            min-height: 40px;
+        }
+
+        .settings-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--cream);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .settings-item button {
+            background: none;
+            border: none;
+            color: var(--rust);
+            cursor: pointer;
+            padding: 0;
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .settings-item button:hover {
+            color: var(--rust-light);
+        }
+
+        .settings-add-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .settings-add-row input {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.5rem;
+            border: 1px solid var(--cream-dark);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .settings-add-row input:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+
         .course-card {
             background: var(--white);
             border-radius: 12px;
@@ -1001,6 +1084,7 @@
             <li><button data-tab="members">👥 Medlemmar</button></li>
             <li><button data-tab="horses">🐎 Hästar</button></li>
             <li><button data-tab="courses">📚 Kurser</button></li>
+            <li><button data-tab="settings">⚙️ Inställningar</button></li>
         </ul>
     </nav>
 
@@ -1101,6 +1185,100 @@
                 <button class="btn btn-primary" onclick="openModal('course')">+ Lägg till kurs</button>
             </div>
             <div id="courses-grid" class="courses-grid"></div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="section-header">
+                <h2>⚙️ Inställningar</h2>
+            </div>
+            
+            <div class="settings-grid">
+                <!-- Ridnivåer -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3>🎯 Ridnivåer</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div id="levels-list" class="settings-list"></div>
+                        <div class="settings-add-row">
+                            <input type="text" id="new-level" placeholder="Ny nivå...">
+                            <button class="btn btn-primary btn-small" onclick="addLevel()">+ Lägg till</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hästtyper -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3>🐴 Hästtyper</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div id="horse-types-list" class="settings-list"></div>
+                        <div class="settings-add-row">
+                            <input type="text" id="new-horse-type" placeholder="Ny hästtyp...">
+                            <button class="btn btn-primary btn-small" onclick="addHorseType()">+ Lägg till</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hästfärger -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3>🎨 Hästfärger</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div id="horse-colors-list" class="settings-list"></div>
+                        <div class="settings-add-row">
+                            <input type="text" id="new-horse-color" placeholder="Ny färg...">
+                            <button class="btn btn-primary btn-small" onclick="addHorseColor()">+ Lägg till</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kurstider -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3>🕐 Kurstider</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div id="course-times-list" class="settings-list"></div>
+                        <div class="settings-add-row">
+                            <input type="time" id="new-course-time">
+                            <button class="btn btn-primary btn-small" onclick="addCourseTime()">+ Lägg till</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kurstyper -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3>📚 Kurstyper</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div id="course-types-list" class="settings-list"></div>
+                        <div class="settings-add-row">
+                            <input type="text" id="new-course-type" placeholder="Ny kurstyp...">
+                            <button class="btn btn-primary btn-small" onclick="addCourseType()">+ Lägg till</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kursnivåer -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <h3>📊 Kursnivåer</h3>
+                    </div>
+                    <div class="settings-card-body">
+                        <div id="course-levels-list" class="settings-list"></div>
+                        <div class="settings-add-row">
+                            <input type="text" id="new-course-level-name" placeholder="Namn (t.ex. Ponny)">
+                            <input type="text" id="new-course-level-code" placeholder="Kod (t.ex. P)" style="width: 80px;">
+                            <button class="btn btn-primary btn-small" onclick="addCourseLevel()">+ Lägg till</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -1346,7 +1524,7 @@
         // =====================================================
         // VERSION CONTROL - Ändra detta vid varje uppdatering
         // =====================================================
-        const APP_VERSION = "5.1";
+        const APP_VERSION = "5.2";
 
         // =====================================================
         // Firebase Initialization
@@ -1405,6 +1583,19 @@
             horses: [],
             courses: [],
             bookings: [],
+            settings: {
+                levels: ['Blå', 'Gul', 'Grön', 'Röd', 'Vit', 'Nybörjare Grupp', 'Prova på'],
+                horseTypes: ['A ponny', 'B ponny', 'C ponny', 'G Ponny', 'Storhäst'],
+                horseColors: ['Brun', 'Ljusbrun', 'Svart', 'Vit', 'Grå', 'Fläckig'],
+                courseTimes: ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'],
+                courseTypes: ['Hästlekis', 'Nybörjare', 'Grundridning', 'Dressyr', 'Hoppning', 'Terrängridning'],
+                courseLevels: [
+                    { code: 'P', name: 'Ponny' },
+                    { code: 'J', name: 'Junior' },
+                    { code: 'S', name: 'Senior' },
+                    { code: 'Spec', name: 'Specialkurs' }
+                ]
+            },
             currentWeek: 52,
             currentYear: 2025
         };
@@ -2155,6 +2346,7 @@
                         horses: data.horses,
                         courses: data.courses,
                         bookings: data.bookings,
+                        settings: data.settings,
                         appVersion: APP_VERSION,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -2288,6 +2480,9 @@
                         if (loadedData.bookings) {
                             data.bookings = loadedData.bookings;
                         }
+                        if (loadedData.settings) {
+                            data.settings = loadedData.settings;
+                        }
                         console.log('Data laddad från Firebase');
                         return;
                     } else {
@@ -2313,6 +2508,9 @@
                 }
                 if (loadedData.bookings) {
                     data.bookings = loadedData.bookings;
+                }
+                if (loadedData.settings) {
+                    data.settings = loadedData.settings;
                 }
                 console.log('Data laddad från localStorage');
             }
@@ -2415,6 +2613,7 @@
             renderCourses();
             renderSchedule();
             renderTodayBookings();
+            renderSettings();
             updateStats();
             
             // Hide loading
@@ -2424,6 +2623,198 @@
             document.getElementById('version-badge').textContent = 'v' + APP_VERSION;
             
             console.log('✅ App startad (v' + APP_VERSION + ')');
+        }
+
+        // =====================================================
+        // Settings Functions
+        // =====================================================
+        
+        function renderSettings() {
+            // Ensure settings exist
+            if (!data.settings) {
+                data.settings = {
+                    levels: ['Blå', 'Gul', 'Grön', 'Röd', 'Vit', 'Nybörjare Grupp', 'Prova på'],
+                    horseTypes: ['A ponny', 'B ponny', 'C ponny', 'G Ponny', 'Storhäst'],
+                    horseColors: ['Brun', 'Ljusbrun', 'Svart', 'Vit', 'Grå', 'Fläckig'],
+                    courseTimes: ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'],
+                    courseTypes: ['Hästlekis', 'Nybörjare', 'Grundridning', 'Dressyr', 'Hoppning', 'Terrängridning'],
+                    courseLevels: [
+                        { code: 'P', name: 'Ponny' },
+                        { code: 'J', name: 'Junior' },
+                        { code: 'S', name: 'Senior' },
+                        { code: 'Spec', name: 'Specialkurs' }
+                    ]
+                };
+            }
+
+            // Render levels
+            document.getElementById('levels-list').innerHTML = data.settings.levels.map(level => `
+                <div class="settings-item">
+                    <span>${level}</span>
+                    <button onclick="removeLevel('${level}')" title="Ta bort">×</button>
+                </div>
+            `).join('');
+
+            // Render horse types
+            document.getElementById('horse-types-list').innerHTML = data.settings.horseTypes.map(type => `
+                <div class="settings-item">
+                    <span>${type}</span>
+                    <button onclick="removeHorseType('${type}')" title="Ta bort">×</button>
+                </div>
+            `).join('');
+
+            // Render horse colors
+            document.getElementById('horse-colors-list').innerHTML = data.settings.horseColors.map(color => `
+                <div class="settings-item">
+                    <span>${color}</span>
+                    <button onclick="removeHorseColor('${color}')" title="Ta bort">×</button>
+                </div>
+            `).join('');
+
+            // Render course times
+            document.getElementById('course-times-list').innerHTML = data.settings.courseTimes.map(time => `
+                <div class="settings-item">
+                    <span>${time}</span>
+                    <button onclick="removeCourseTime('${time}')" title="Ta bort">×</button>
+                </div>
+            `).join('');
+
+            // Render course types
+            document.getElementById('course-types-list').innerHTML = data.settings.courseTypes.map(type => `
+                <div class="settings-item">
+                    <span>${type}</span>
+                    <button onclick="removeCourseType('${type}')" title="Ta bort">×</button>
+                </div>
+            `).join('');
+
+            // Render course levels
+            document.getElementById('course-levels-list').innerHTML = data.settings.courseLevels.map(level => `
+                <div class="settings-item">
+                    <span>${level.name} (${level.code})</span>
+                    <button onclick="removeCourseLevel('${level.code}')" title="Ta bort">×</button>
+                </div>
+            `).join('');
+        }
+
+        // Add functions
+        function addLevel() {
+            const input = document.getElementById('new-level');
+            const value = input.value.trim();
+            if (value && !data.settings.levels.includes(value)) {
+                data.settings.levels.push(value);
+                input.value = '';
+                renderSettings();
+                saveData();
+            }
+        }
+
+        function addHorseType() {
+            const input = document.getElementById('new-horse-type');
+            const value = input.value.trim();
+            if (value && !data.settings.horseTypes.includes(value)) {
+                data.settings.horseTypes.push(value);
+                input.value = '';
+                renderSettings();
+                saveData();
+            }
+        }
+
+        function addHorseColor() {
+            const input = document.getElementById('new-horse-color');
+            const value = input.value.trim();
+            if (value && !data.settings.horseColors.includes(value)) {
+                data.settings.horseColors.push(value);
+                input.value = '';
+                renderSettings();
+                saveData();
+            }
+        }
+
+        function addCourseTime() {
+            const input = document.getElementById('new-course-time');
+            const value = input.value;
+            if (value && !data.settings.courseTimes.includes(value)) {
+                data.settings.courseTimes.push(value);
+                data.settings.courseTimes.sort();
+                input.value = '';
+                renderSettings();
+                saveData();
+            }
+        }
+
+        function addCourseType() {
+            const input = document.getElementById('new-course-type');
+            const value = input.value.trim();
+            if (value && !data.settings.courseTypes.includes(value)) {
+                data.settings.courseTypes.push(value);
+                input.value = '';
+                renderSettings();
+                saveData();
+            }
+        }
+
+        function addCourseLevel() {
+            const nameInput = document.getElementById('new-course-level-name');
+            const codeInput = document.getElementById('new-course-level-code');
+            const name = nameInput.value.trim();
+            const code = codeInput.value.trim();
+            if (name && code && !data.settings.courseLevels.find(l => l.code === code)) {
+                data.settings.courseLevels.push({ code, name });
+                nameInput.value = '';
+                codeInput.value = '';
+                renderSettings();
+                saveData();
+            }
+        }
+
+        // Remove functions
+        function removeLevel(level) {
+            if (confirm(`Ta bort nivån "${level}"?`)) {
+                data.settings.levels = data.settings.levels.filter(l => l !== level);
+                renderSettings();
+                saveData();
+            }
+        }
+
+        function removeHorseType(type) {
+            if (confirm(`Ta bort hästtypen "${type}"?`)) {
+                data.settings.horseTypes = data.settings.horseTypes.filter(t => t !== type);
+                renderSettings();
+                saveData();
+            }
+        }
+
+        function removeHorseColor(color) {
+            if (confirm(`Ta bort färgen "${color}"?`)) {
+                data.settings.horseColors = data.settings.horseColors.filter(c => c !== color);
+                renderSettings();
+                saveData();
+            }
+        }
+
+        function removeCourseTime(time) {
+            if (confirm(`Ta bort tiden "${time}"?`)) {
+                data.settings.courseTimes = data.settings.courseTimes.filter(t => t !== time);
+                renderSettings();
+                saveData();
+            }
+        }
+
+        function removeCourseType(type) {
+            if (confirm(`Ta bort kurstypen "${type}"?`)) {
+                data.settings.courseTypes = data.settings.courseTypes.filter(t => t !== type);
+                renderSettings();
+                saveData();
+            }
+        }
+
+        function removeCourseLevel(code) {
+            const level = data.settings.courseLevels.find(l => l.code === code);
+            if (confirm(`Ta bort kursnivån "${level ? level.name : code}"?`)) {
+                data.settings.courseLevels = data.settings.courseLevels.filter(l => l.code !== code);
+                renderSettings();
+                saveData();
+            }
         }
 
         // Start the app when everything is loaded
