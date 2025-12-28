@@ -3,12 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v5.3</title>
+    <title>Maskrosstallet - Schema & Administration v5.5</title>
     
     <!-- Förhindra cachning -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    
+    <!-- App Icon för mobil (när man sparar på hemskärmen) -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%23c9a227'/><stop offset='100%25' style='stop-color:%23a68521'/></linearGradient></defs><rect width='180' height='180' rx='36' fill='url(%23g)'/><text x='90' y='115' font-family='Georgia,serif' font-size='70' font-weight='bold' fill='%231a2f23' text-anchor='middle'>MS</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%23c9a227'/><stop offset='100%25' style='stop-color:%23a68521'/></linearGradient></defs><rect width='180' height='180' rx='36' fill='url(%23g)'/><text x='90' y='115' font-family='Georgia,serif' font-size='70' font-weight='bold' fill='%231a2f23' text-anchor='middle'>MS</text></svg>">
+    
+    <!-- PWA Meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Maskrosstallet">
+    <meta name="theme-color" content="#1a2f23">
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     
@@ -812,6 +822,112 @@
             border-color: var(--gold);
         }
 
+        /* Sub-tabs */
+        .sub-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--cream-dark);
+            padding-bottom: 0.5rem;
+        }
+
+        .sub-tab {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            color: var(--forest-medium);
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+        }
+
+        .sub-tab:hover {
+            background: var(--cream-dark);
+        }
+
+        .sub-tab.active {
+            background: var(--gold);
+            color: var(--forest-deep);
+            font-weight: 600;
+        }
+
+        .sub-tab-content {
+            display: none;
+        }
+
+        .sub-tab-content.active {
+            display: block;
+        }
+
+        /* Notes styles */
+        .notes-container {
+            max-width: 800px;
+        }
+
+        .notes-card {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px var(--shadow);
+        }
+
+        .notes-card-header {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            padding: 1.5rem;
+        }
+
+        .notes-card-header h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--forest-deep);
+            font-size: 1.3rem;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .notes-card-header p {
+            color: var(--forest-medium);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .notes-card-body {
+            padding: 1.5rem;
+        }
+
+        #notes-textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 1rem;
+            border: 2px solid var(--cream-dark);
+            border-radius: 8px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1rem;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        #notes-textarea:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+
+        .notes-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        #notes-saved-status {
+            color: var(--forest-light);
+            font-size: 0.9rem;
+        }
+
+        #notes-saved-status.saved {
+            color: #2e7d32;
+        }
+
         /* Group member selection */
         .group-members-select {
             display: flex;
@@ -1288,88 +1404,121 @@
                 <h2>⚙️ Inställningar</h2>
             </div>
             
-            <div class="settings-grid">
-                <!-- Ridnivåer -->
-                <div class="settings-card">
-                    <div class="settings-card-header">
-                        <h3>🎯 Ridnivåer</h3>
+            <!-- Sub-tabs -->
+            <div class="sub-tabs">
+                <button class="sub-tab active" onclick="showSubTab('kursinfo')">📚 Kursinfo</button>
+                <button class="sub-tab" onclick="showSubTab('notes')">📝 Anteckningar</button>
+            </div>
+
+            <!-- Kursinfo Sub-tab -->
+            <div id="subtab-kursinfo" class="sub-tab-content active">
+                <div class="settings-grid">
+                    <!-- Ridnivåer -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3>🎯 Ridnivåer</h3>
+                        </div>
+                        <div class="settings-card-body">
+                            <div id="levels-list" class="settings-list"></div>
+                            <div class="settings-add-row">
+                                <input type="text" id="new-level" placeholder="Ny nivå...">
+                                <button class="btn btn-primary btn-small" onclick="addLevel()">+ Lägg till</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="settings-card-body">
-                        <div id="levels-list" class="settings-list"></div>
-                        <div class="settings-add-row">
-                            <input type="text" id="new-level" placeholder="Ny nivå...">
-                            <button class="btn btn-primary btn-small" onclick="addLevel()">+ Lägg till</button>
+
+                    <!-- Hästtyper -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3>🐴 Hästtyper</h3>
+                        </div>
+                        <div class="settings-card-body">
+                            <div id="horse-types-list" class="settings-list"></div>
+                            <div class="settings-add-row">
+                                <input type="text" id="new-horse-type" placeholder="Ny hästtyp...">
+                                <button class="btn btn-primary btn-small" onclick="addHorseType()">+ Lägg till</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hästfärger -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3>🎨 Hästfärger</h3>
+                        </div>
+                        <div class="settings-card-body">
+                            <div id="horse-colors-list" class="settings-list"></div>
+                            <div class="settings-add-row">
+                                <input type="text" id="new-horse-color" placeholder="Ny färg...">
+                                <button class="btn btn-primary btn-small" onclick="addHorseColor()">+ Lägg till</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kurstider -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3>🕐 Kurstider</h3>
+                        </div>
+                        <div class="settings-card-body">
+                            <div id="course-times-list" class="settings-list"></div>
+                            <div class="settings-add-row">
+                                <input type="time" id="new-course-time">
+                                <button class="btn btn-primary btn-small" onclick="addCourseTime()">+ Lägg till</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kurstyper -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3>📚 Kurstyper</h3>
+                        </div>
+                        <div class="settings-card-body">
+                            <div id="course-types-list" class="settings-list"></div>
+                            <div class="settings-add-row">
+                                <input type="text" id="new-course-type" placeholder="Ny kurstyp...">
+                                <button class="btn btn-primary btn-small" onclick="addCourseType()">+ Lägg till</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kursnivåer -->
+                    <div class="settings-card">
+                        <div class="settings-card-header">
+                            <h3>📊 Kursnivåer</h3>
+                        </div>
+                        <div class="settings-card-body">
+                            <div id="course-levels-list" class="settings-list"></div>
+                            <div class="settings-add-row">
+                                <input type="text" id="new-course-level-name" placeholder="Namn (t.ex. Ponny)">
+                                <input type="text" id="new-course-level-code" placeholder="Kod (t.ex. P)" style="width: 80px;">
+                                <button class="btn btn-primary btn-small" onclick="addCourseLevel()">+ Lägg till</button>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Hästtyper -->
-                <div class="settings-card">
-                    <div class="settings-card-header">
-                        <h3>🐴 Hästtyper</h3>
-                    </div>
-                    <div class="settings-card-body">
-                        <div id="horse-types-list" class="settings-list"></div>
-                        <div class="settings-add-row">
-                            <input type="text" id="new-horse-type" placeholder="Ny hästtyp...">
-                            <button class="btn btn-primary btn-small" onclick="addHorseType()">+ Lägg till</button>
+            <!-- Notes Sub-tab -->
+            <div id="subtab-notes" class="sub-tab-content">
+                <div class="notes-container">
+                    <div class="notes-card">
+                        <div class="notes-card-header">
+                            <h3>📝 Önskemål & Idéer</h3>
+                            <p>Skriv ner funktioner ni vill ha, förbättringar eller andra anteckningar</p>
                         </div>
-                    </div>
-                </div>
+                        <div class="notes-card-body">
+                            <textarea id="notes-textarea" placeholder="Skriv era önskemål här...
 
-                <!-- Hästfärger -->
-                <div class="settings-card">
-                    <div class="settings-card-header">
-                        <h3>🎨 Hästfärger</h3>
-                    </div>
-                    <div class="settings-card-body">
-                        <div id="horse-colors-list" class="settings-list"></div>
-                        <div class="settings-add-row">
-                            <input type="text" id="new-horse-color" placeholder="Ny färg...">
-                            <button class="btn btn-primary btn-small" onclick="addHorseColor()">+ Lägg till</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Kurstider -->
-                <div class="settings-card">
-                    <div class="settings-card-header">
-                        <h3>🕐 Kurstider</h3>
-                    </div>
-                    <div class="settings-card-body">
-                        <div id="course-times-list" class="settings-list"></div>
-                        <div class="settings-add-row">
-                            <input type="time" id="new-course-time">
-                            <button class="btn btn-primary btn-small" onclick="addCourseTime()">+ Lägg till</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Kurstyper -->
-                <div class="settings-card">
-                    <div class="settings-card-header">
-                        <h3>📚 Kurstyper</h3>
-                    </div>
-                    <div class="settings-card-body">
-                        <div id="course-types-list" class="settings-list"></div>
-                        <div class="settings-add-row">
-                            <input type="text" id="new-course-type" placeholder="Ny kurstyp...">
-                            <button class="btn btn-primary btn-small" onclick="addCourseType()">+ Lägg till</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Kursnivåer -->
-                <div class="settings-card">
-                    <div class="settings-card-header">
-                        <h3>📊 Kursnivåer</h3>
-                    </div>
-                    <div class="settings-card-body">
-                        <div id="course-levels-list" class="settings-list"></div>
-                        <div class="settings-add-row">
-                            <input type="text" id="new-course-level-name" placeholder="Namn (t.ex. Ponny)">
-                            <input type="text" id="new-course-level-code" placeholder="Kod (t.ex. P)" style="width: 80px;">
-                            <button class="btn btn-primary btn-small" onclick="addCourseLevel()">+ Lägg till</button>
+Exempel:
+- Vi vill kunna skicka påminnelser via SMS
+- Det vore bra med en kalenderexport
+- Lägg till möjlighet att se historik över bokningar"></textarea>
+                            <div class="notes-actions">
+                                <span id="notes-saved-status"></span>
+                                <button class="btn btn-primary" onclick="saveNotes()">💾 Spara anteckningar</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1681,7 +1830,7 @@
         // =====================================================
         // VERSION CONTROL - Ändra detta vid varje uppdatering
         // =====================================================
-        const APP_VERSION = "5.3";
+        const APP_VERSION = "5.5";
 
         // =====================================================
         // Firebase Initialization
@@ -1741,6 +1890,7 @@
             courses: [],
             bookings: [],
             groups: [],
+            notes: '',
             settings: {
                 levels: ['Blå', 'Gul', 'Grön', 'Röd', 'Vit', 'Nybörjare Grupp', 'Prova på'],
                 horseTypes: ['A ponny', 'B ponny', 'C ponny', 'G Ponny', 'Storhäst'],
@@ -2512,6 +2662,7 @@
                         courses: data.courses,
                         bookings: data.bookings,
                         groups: data.groups,
+                        notes: data.notes,
                         settings: data.settings,
                         appVersion: APP_VERSION,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2649,6 +2800,9 @@
                         if (loadedData.groups) {
                             data.groups = loadedData.groups;
                         }
+                        if (loadedData.notes) {
+                            data.notes = loadedData.notes;
+                        }
                         if (loadedData.settings) {
                             data.settings = loadedData.settings;
                         }
@@ -2680,6 +2834,9 @@
                 }
                 if (loadedData.groups) {
                     data.groups = loadedData.groups;
+                }
+                if (loadedData.notes) {
+                    data.notes = loadedData.notes;
                 }
                 if (loadedData.settings) {
                     data.settings = loadedData.settings;
@@ -2787,6 +2944,7 @@
             renderSchedule();
             renderTodayBookings();
             renderSettings();
+            loadNotes();
             updateStats();
             
             // Hide loading
@@ -3150,6 +3308,43 @@
                 renderSettings();
                 saveData();
             }
+        }
+
+        // =====================================================
+        // Sub-tabs and Notes Functions
+        // =====================================================
+
+        function showSubTab(tabName) {
+            // Update button states
+            document.querySelectorAll('.sub-tab').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update content visibility
+            document.querySelectorAll('.sub-tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`subtab-${tabName}`).classList.add('active');
+        }
+
+        function loadNotes() {
+            const textarea = document.getElementById('notes-textarea');
+            if (textarea && data.notes) {
+                textarea.value = data.notes;
+            }
+        }
+
+        function saveNotes() {
+            const textarea = document.getElementById('notes-textarea');
+            data.notes = textarea.value;
+            saveData();
+            
+            // Show saved status
+            const status = document.getElementById('notes-saved-status');
+            status.textContent = '✅ Sparad!';
+            status.classList.add('saved');
+            
+            setTimeout(() => {
+                status.textContent = '';
+                status.classList.remove('saved');
+            }, 3000);
         }
 
         // Start the app when everything is loaded
