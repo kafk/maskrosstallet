@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v4.3</title>
+    <title>Maskrosstallet - Schema & Administration v4.5</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- Firebase SDK - loaded synchronously -->
@@ -984,7 +984,7 @@
                     <span>Grundat 2022 • Gamlestaden</span>
                 </div>
             </div>
-            <div class="version-badge">Version 4.3</div>
+            <div class="version-badge">Version 4.5</div>
         </div>
     </header>
 
@@ -1232,16 +1232,8 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Dag</label>
-                        <select id="booking-day">
-                            <option value="Måndag">Måndag</option>
-                            <option value="Tisdag">Tisdag</option>
-                            <option value="Onsdag">Onsdag</option>
-                            <option value="Torsdag">Torsdag</option>
-                            <option value="Fredag">Fredag</option>
-                            <option value="Lördag">Lördag</option>
-                            <option value="Söndag">Söndag</option>
-                        </select>
+                        <label>Datum</label>
+                        <input type="date" id="booking-date">
                     </div>
                     <div class="form-group">
                         <label>Tid</label>
@@ -1395,41 +1387,12 @@
         }
 
         // =====================================================
-        // Data Store
+        // Data Store - Startar tomt, laddas från Firebase
         // =====================================================
         let data = {
-            members: [
-                { id: 1, firstname: 'Havanna', level: 'Gul' },
-                { id: 2, firstname: 'Sofia', level: 'Gul' },
-                { id: 3, firstname: 'Lisa', level: 'Gul' },
-                { id: 4, firstname: 'Karin', level: 'Röd' },
-                { id: 5, firstname: 'Lejla', level: 'Röd' },
-                { id: 6, firstname: 'Elli', level: 'Grön' }
-            ],
-            horses: [
-                { id: 1, name: 'Rosei', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
-                { id: 2, name: 'Denise', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
-                { id: 3, name: 'Trolle', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
-                { id: 4, name: 'Haffi', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
-                { id: 5, name: 'Joshi', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
-                { id: 6, name: 'Pepsi', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
-                { id: 7, name: 'Diva', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
-                { id: 8, name: 'Pricken', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
-                { id: 9, name: 'Herkules', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' }
-            ],
-            courses: [
-                { id: 1, name: 'Hästlekis', level: 'P', duration: 45, maxParticipants: 6, type: 'Hästlekis' },
-                { id: 2, name: 'Ponny Nybörjare', level: 'P', duration: 45, maxParticipants: 8, type: 'Nybörjare' },
-                { id: 3, name: 'Ponny Grundridning P1-P3', level: 'P', duration: 45, maxParticipants: 8, type: 'Grundridning' },
-                { id: 4, name: 'Ponny Avancerad P4-P5', level: 'P', duration: 60, maxParticipants: 6, type: 'Grundridning' },
-                { id: 5, name: 'Junior Grundridning J1-J3', level: 'J', duration: 60, maxParticipants: 8, type: 'Grundridning' },
-                { id: 6, name: 'Junior Dressyr J4-J5', level: 'J', duration: 60, maxParticipants: 6, type: 'Dressyr' },
-                { id: 7, name: 'Junior Hoppning J4-J5', level: 'J', duration: 60, maxParticipants: 6, type: 'Hoppning' },
-                { id: 8, name: 'Senior Grundridning S1-S3', level: 'S', duration: 60, maxParticipants: 8, type: 'Grundridning' },
-                { id: 9, name: 'Senior Dressyr S4-S5', level: 'S', duration: 60, maxParticipants: 6, type: 'Dressyr' },
-                { id: 10, name: 'Senior Hoppning S4-S5', level: 'S', duration: 60, maxParticipants: 6, type: 'Hoppning' },
-                { id: 11, name: 'Terrängridning', level: 'Spec', duration: 90, maxParticipants: 4, type: 'Terrängridning' }
-            ],
+            members: [],
+            horses: [],
+            courses: [],
             bookings: [],
             currentWeek: 52,
             currentYear: 2025
@@ -1576,10 +1539,17 @@
         }
 
         function saveBooking() {
+            const bookingDate = document.getElementById('booking-date').value;
+            
+            if (!bookingDate) {
+                alert('Vänligen välj ett datum');
+                return;
+            }
+            
             const booking = {
                 id: Date.now(),
                 courseId: parseInt(document.getElementById('booking-course').value),
-                day: document.getElementById('booking-day').value,
+                date: bookingDate,  // Format: YYYY-MM-DD
                 time: document.getElementById('booking-time').value,
                 memberId: parseInt(document.getElementById('booking-member').value),
                 horseId: parseInt(document.getElementById('booking-horse').value)
@@ -1810,8 +1780,8 @@
             // Current month days
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
-                const dayName = getDayName(date);
-                const hasBookings = data.bookings.some(b => b.day === dayName);
+                const dateStr = formatDateForBooking(date);
+                const hasBookings = data.bookings.some(b => b.date === dateStr);
                 const isToday = date.toDateString() === today.toDateString();
                 const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
                 
@@ -1838,6 +1808,13 @@
             }
         }
 
+        function formatDateForBooking(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         function getDayName(date) {
             const dayNames = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
             return dayNames[date.getDay()];
@@ -1850,8 +1827,9 @@
         }
 
         function showDayBookings(date) {
+            const dateStr = formatDateForBooking(date);
             const dayName = getDayName(date);
-            const dayBookings = data.bookings.filter(b => b.day === dayName);
+            const dayBookings = data.bookings.filter(b => b.date === dateStr);
             
             const monthNames = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 
                                'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
@@ -1864,7 +1842,7 @@
             if (dayBookings.length === 0) {
                 container.innerHTML = `
                     <p class="no-bookings">Inga bokningar denna dag</p>
-                    <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="quickBookDate('${dayName}')">+ Lägg till bokning</button>
+                    <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="quickBookDate('${dateStr}')">+ Lägg till bokning</button>
                 `;
                 return;
             }
@@ -1887,7 +1865,7 @@
                     </div>
                 `;
             }).join('') + `
-                <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="quickBookDate('${dayName}')">+ Lägg till bokning</button>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="quickBookDate('${dateStr}')">+ Lägg till bokning</button>
             `;
         }
 
@@ -1896,18 +1874,19 @@
             renderCalendar();
         }
 
-        function quickBookDate(dayName) {
-            document.getElementById('booking-day').value = dayName;
+        function quickBookDate(dateStr) {
+            document.getElementById('booking-date').value = dateStr;
             openModal('booking');
         }
 
         function renderTodayBookings() {
             const container = document.getElementById('today-bookings');
             const today = new Date();
+            const todayStr = formatDateForBooking(today);
             const dayNames = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
             const todayName = dayNames[today.getDay()];
 
-            const todayBookings = data.bookings.filter(b => b.day === todayName);
+            const todayBookings = data.bookings.filter(b => b.date === todayStr);
 
             if (todayBookings.length === 0) {
                 container.innerHTML = `
@@ -1953,9 +1932,8 @@
             document.getElementById('stat-courses').textContent = data.courses.length;
             
             const today = new Date();
-            const dayNames = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
-            const todayName = dayNames[today.getDay()];
-            document.getElementById('stat-bookings').textContent = data.bookings.filter(b => b.day === todayName).length;
+            const todayStr = formatDateForBooking(today);
+            document.getElementById('stat-bookings').textContent = data.bookings.filter(b => b.date === todayStr).length;
         }
 
         function changeWeek(delta) {
@@ -2121,14 +2099,14 @@
                     const doc = await db.collection('settings').doc('appData').get();
                     if (doc.exists) {
                         const loadedData = doc.data();
-                        // Only use loaded data if it has content
-                        if (loadedData.members && loadedData.members.length > 0) {
+                        // Load data from Firebase
+                        if (loadedData.members) {
                             data.members = loadedData.members;
                         }
-                        if (loadedData.horses && loadedData.horses.length > 0) {
+                        if (loadedData.horses) {
                             data.horses = loadedData.horses;
                         }
-                        if (loadedData.courses && loadedData.courses.length > 0) {
+                        if (loadedData.courses) {
                             data.courses = loadedData.courses;
                         }
                         if (loadedData.bookings) {
@@ -2137,9 +2115,7 @@
                         console.log('Data laddad från Firebase');
                         return;
                     } else {
-                        // No data in Firebase yet - save initial data
-                        console.log('Ingen data i Firebase - sparar initial data');
-                        await saveData();
+                        console.log('Ingen data i Firebase ännu - starta med att lägga till medlemmar, hästar och kurser');
                     }
                 } catch (error) {
                     console.error('Firebase load error:', error);
@@ -2150,13 +2126,13 @@
             const saved = localStorage.getItem('maskrosstallet_data');
             if (saved) {
                 const loadedData = JSON.parse(saved);
-                if (loadedData.members && loadedData.members.length > 0) {
+                if (loadedData.members) {
                     data.members = loadedData.members;
                 }
-                if (loadedData.horses && loadedData.horses.length > 0) {
+                if (loadedData.horses) {
                     data.horses = loadedData.horses;
                 }
-                if (loadedData.courses && loadedData.courses.length > 0) {
+                if (loadedData.courses) {
                     data.courses = loadedData.courses;
                 }
                 if (loadedData.bookings) {
