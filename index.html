@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v4.6</title>
+    <title>Maskrosstallet - Schema & Administration v4.7</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- Firebase SDK - loaded synchronously -->
@@ -984,7 +984,7 @@
                     <span>Grundat 2022 • Gamlestaden</span>
                 </div>
             </div>
-            <div class="version-badge">Version 4.6</div>
+            <div class="version-badge">Version 4.7</div>
         </div>
     </header>
 
@@ -2076,6 +2076,13 @@
         // =====================================================
         
         async function saveData() {
+            console.log('Sparar data...', {
+                members: data.members.length,
+                horses: data.horses.length,
+                courses: data.courses.length,
+                bookings: data.bookings.length
+            });
+            
             // Always save to localStorage as backup
             localStorage.setItem('maskrosstallet_data', JSON.stringify(data));
             
@@ -2089,9 +2096,9 @@
                         bookings: data.bookings,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    console.log('Data sparad till Firebase');
+                    console.log('✅ Data sparad till Firebase');
                 } catch (error) {
-                    console.error('Firebase save error:', error);
+                    console.error('❌ Firebase save error:', error);
                 }
             }
         }
@@ -2229,45 +2236,6 @@
             
             // Load data
             await loadData();
-            
-            // Set up real-time listener if Firebase is connected
-            if (useFirebase && db) {
-                db.collection('settings').doc('appData').onSnapshot((doc) => {
-                    if (doc.exists) {
-                        const loadedData = doc.data();
-                        let changed = false;
-                        
-                        if (loadedData.members && JSON.stringify(loadedData.members) !== JSON.stringify(data.members)) {
-                            data.members = loadedData.members;
-                            changed = true;
-                        }
-                        if (loadedData.horses && JSON.stringify(loadedData.horses) !== JSON.stringify(data.horses)) {
-                            data.horses = loadedData.horses;
-                            changed = true;
-                        }
-                        if (loadedData.courses && JSON.stringify(loadedData.courses) !== JSON.stringify(data.courses)) {
-                            data.courses = loadedData.courses;
-                            changed = true;
-                        }
-                        if (loadedData.bookings && JSON.stringify(loadedData.bookings) !== JSON.stringify(data.bookings)) {
-                            data.bookings = loadedData.bookings;
-                            changed = true;
-                        }
-                        
-                        if (changed) {
-                            console.log('Data uppdaterad från Firebase (realtime)');
-                            renderMembers();
-                            renderHorses();
-                            renderCourses();
-                            renderSchedule();
-                            renderTodayBookings();
-                            updateStats();
-                        }
-                    }
-                }, (error) => {
-                    console.error('Firebase listener error:', error);
-                });
-            }
             
             // Render UI
             renderMembers();
