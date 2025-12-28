@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v4.2</title>
+    <title>Maskrosstallet - Schema & Administration v4.3</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <!-- Firebase SDK - loaded synchronously -->
@@ -984,7 +984,7 @@
                     <span>Grundat 2022 • Gamlestaden</span>
                 </div>
             </div>
-            <div class="version-badge">Version 4.2</div>
+            <div class="version-badge">Version 4.3</div>
         </div>
     </header>
 
@@ -2121,12 +2121,25 @@
                     const doc = await db.collection('settings').doc('appData').get();
                     if (doc.exists) {
                         const loadedData = doc.data();
-                        data.members = loadedData.members || data.members;
-                        data.horses = loadedData.horses || data.horses;
-                        data.courses = loadedData.courses || data.courses;
-                        data.bookings = loadedData.bookings || data.bookings;
+                        // Only use loaded data if it has content
+                        if (loadedData.members && loadedData.members.length > 0) {
+                            data.members = loadedData.members;
+                        }
+                        if (loadedData.horses && loadedData.horses.length > 0) {
+                            data.horses = loadedData.horses;
+                        }
+                        if (loadedData.courses && loadedData.courses.length > 0) {
+                            data.courses = loadedData.courses;
+                        }
+                        if (loadedData.bookings) {
+                            data.bookings = loadedData.bookings;
+                        }
                         console.log('Data laddad från Firebase');
                         return;
+                    } else {
+                        // No data in Firebase yet - save initial data
+                        console.log('Ingen data i Firebase - sparar initial data');
+                        await saveData();
                     }
                 } catch (error) {
                     console.error('Firebase load error:', error);
@@ -2137,10 +2150,18 @@
             const saved = localStorage.getItem('maskrosstallet_data');
             if (saved) {
                 const loadedData = JSON.parse(saved);
-                data.members = loadedData.members || data.members;
-                data.horses = loadedData.horses || data.horses;
-                data.courses = loadedData.courses || data.courses;
-                data.bookings = loadedData.bookings || data.bookings;
+                if (loadedData.members && loadedData.members.length > 0) {
+                    data.members = loadedData.members;
+                }
+                if (loadedData.horses && loadedData.horses.length > 0) {
+                    data.horses = loadedData.horses;
+                }
+                if (loadedData.courses && loadedData.courses.length > 0) {
+                    data.courses = loadedData.courses;
+                }
+                if (loadedData.bookings) {
+                    data.bookings = loadedData.bookings;
+                }
                 console.log('Data laddad från localStorage');
             }
         }
@@ -2228,6 +2249,45 @@
             
             // Load data
             await loadData();
+            
+            // Set up real-time listener if Firebase is connected
+            if (useFirebase && db) {
+                db.collection('settings').doc('appData').onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const loadedData = doc.data();
+                        let changed = false;
+                        
+                        if (loadedData.members && JSON.stringify(loadedData.members) !== JSON.stringify(data.members)) {
+                            data.members = loadedData.members;
+                            changed = true;
+                        }
+                        if (loadedData.horses && JSON.stringify(loadedData.horses) !== JSON.stringify(data.horses)) {
+                            data.horses = loadedData.horses;
+                            changed = true;
+                        }
+                        if (loadedData.courses && JSON.stringify(loadedData.courses) !== JSON.stringify(data.courses)) {
+                            data.courses = loadedData.courses;
+                            changed = true;
+                        }
+                        if (loadedData.bookings && JSON.stringify(loadedData.bookings) !== JSON.stringify(data.bookings)) {
+                            data.bookings = loadedData.bookings;
+                            changed = true;
+                        }
+                        
+                        if (changed) {
+                            console.log('Data uppdaterad från Firebase (realtime)');
+                            renderMembers();
+                            renderHorses();
+                            renderCourses();
+                            renderSchedule();
+                            renderTodayBookings();
+                            updateStats();
+                        }
+                    }
+                }, (error) => {
+                    console.error('Firebase listener error:', error);
+                });
+            }
             
             // Render UI
             renderMembers();
