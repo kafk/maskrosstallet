@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v4.0</title>
+    <title>Maskrosstallet - Schema & Administration v4.2</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <!-- Firebase SDK - loaded synchronously -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     
     <style>
         :root {
@@ -984,7 +984,7 @@
                     <span>Grundat 2022 • Gamlestaden</span>
                 </div>
             </div>
-            <div class="version-badge">Version 4.0</div>
+            <div class="version-badge">Version 4.2</div>
         </div>
     </header>
 
@@ -1336,12 +1336,13 @@
         // Hämta den från Firebase Console > Project Settings > Your apps > Web app
         
         const firebaseConfig = {
-            apiKey: "DIN_API_KEY_HÄR",
-            authDomain: "ditt-projekt.firebaseapp.com",
-            projectId: "ditt-projekt-id",
-            storageBucket: "ditt-projekt.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abc123def456"
+            apiKey: "AIzaSyCCeNIB1F_8JUn6W2AJiBApxX53l5sXKRk",
+            authDomain: "maskrosstallet.firebaseapp.com",
+            projectId: "maskrosstallet",
+            storageBucket: "maskrosstallet.firebasestorage.app",
+            messagingSenderId: "672312068520",
+            appId: "1:672312068520:web:5eefb4e1e069b101b4f59d",
+            measurementId: "G-J72WPJRP3D"
         };
 
         // =====================================================
@@ -1353,6 +1354,13 @@
 
         function initFirebase() {
             try {
+                // Check if Firebase SDK is loaded
+                if (typeof firebase === 'undefined') {
+                    console.log('Firebase SDK ej laddat - använder localStorage');
+                    updateConnectionStatus('offline', '⚠️ Firebase SDK ej laddat');
+                    return false;
+                }
+
                 // Check if config is set
                 if (firebaseConfig.apiKey === "DIN_API_KEY_HÄR") {
                     console.log('Firebase ej konfigurerad - använder localStorage');
@@ -2233,8 +2241,10 @@
             document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        // Start the app
-        init();
+        // Start the app when everything is loaded
+        window.onload = function() {
+            init();
+        };
     </script>
 </body>
 </html>
