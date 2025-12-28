@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v5.5</title>
+    <title>Maskrosstallet - Schema & Administration v5.9</title>
     
     <!-- Förhindra cachning -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -585,17 +585,29 @@
             color: var(--white);
         }
 
-        .calendar-day.has-bookings::after {
-            content: '';
+        .calendar-indicators {
             position: absolute;
-            bottom: 6px;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 3px;
+            align-items: center;
+        }
+
+        .indicator-group {
+            font-size: 10px;
+            line-height: 1;
+        }
+
+        .indicator-booking {
             width: 6px;
             height: 6px;
             background: var(--rust);
             border-radius: 50%;
         }
 
-        .calendar-day.selected.has-bookings::after {
+        .calendar-day.selected .indicator-booking {
             background: var(--gold);
         }
 
@@ -926,6 +938,108 @@
 
         #notes-saved-status.saved {
             color: #2e7d32;
+        }
+
+        /* Checkbox label styling */
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .checkbox-label:hover {
+            background: var(--cream);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .care-times-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        /* Care grid */
+        .care-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .care-card {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px var(--shadow);
+        }
+
+        .care-card-header {
+            background: linear-gradient(135deg, #7eb89a, #5a9e78);
+            padding: 1rem 1.5rem;
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .care-card-header .horse-emoji {
+            font-size: 2rem;
+        }
+
+        .care-card-header h4 {
+            font-family: 'Playfair Display', serif;
+            margin: 0;
+        }
+
+        .care-card-body {
+            padding: 1.5rem;
+        }
+
+        .care-section {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--cream-dark);
+        }
+
+        .care-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .care-section-title {
+            font-weight: 600;
+            color: var(--forest-medium);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .care-times {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .care-time-badge {
+            background: var(--cream);
+            padding: 0.3rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+
+        .care-time-badge.active {
+            background: var(--gold);
+            color: var(--forest-deep);
         }
 
         /* Group member selection */
@@ -1286,6 +1400,7 @@
             <li><button data-tab="horses">🐎 Hästar</button></li>
             <li><button data-tab="courses">📚 Kurser</button></li>
             <li><button data-tab="groups">👨‍👩‍👧‍👦 Grupper</button></li>
+            <li><button data-tab="care">🩺 Vårdnad</button></li>
             <li><button data-tab="settings">⚙️ Inställningar</button></li>
         </ul>
     </nav>
@@ -1322,9 +1437,14 @@
             </div>
 
             <div class="section-header" style="margin-top: 2rem;">
-                <h2>Dagens bokningar</h2>
+                <h2>📅 Dagens bokningar</h2>
             </div>
             <div id="today-bookings" class="card-grid"></div>
+
+            <div class="section-header" style="margin-top: 2rem;">
+                <h2>🗓️ Kommande bokningar</h2>
+            </div>
+            <div id="upcoming-bookings" class="card-grid"></div>
         </div>
 
         <!-- Schedule Tab -->
@@ -1396,6 +1516,18 @@
                 <button class="btn btn-primary" onclick="openModal('group')">+ Skapa grupp</button>
             </div>
             <div id="groups-grid" class="card-grid"></div>
+        </div>
+
+        <!-- Care Tab (Vårdnad) -->
+        <div id="care" class="tab-content">
+            <div class="section-header">
+                <h2>🩺 Vårdnad</h2>
+                <button class="btn btn-primary" onclick="openModal('care')">+ Lägg till schema</button>
+            </div>
+            
+            <div class="care-grid" id="care-grid">
+                <!-- Will be populated by JS -->
+            </div>
         </div>
 
         <!-- Settings Tab -->
@@ -1764,6 +1896,12 @@ Exempel:
                     <label>Beskrivning</label>
                     <input type="text" id="group-description">
                 </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="group-recurring" checked>
+                        <span>🔄 Återkommande varje vecka</span>
+                    </label>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Dag</label>
@@ -1810,6 +1948,60 @@ Exempel:
         </div>
     </div>
 
+    <!-- Care Modal (Vårdnad) -->
+    <div class="modal-overlay" id="modal-care">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Lägg till vårdschema</h3>
+                <button class="modal-close" onclick="closeModal('care')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Häst</label>
+                    <select id="care-horse"></select>
+                </div>
+                <div class="form-group">
+                    <label>🍎 Utfodringstider</label>
+                    <div class="care-times-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="care-feed-morning" checked>
+                            <span>Morgon (07:00)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="care-feed-noon">
+                            <span>Lunch (12:00)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="care-feed-evening" checked>
+                            <span>Kväll (18:00)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>🌿 Hagvistelse</label>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Från</label>
+                            <input type="time" id="care-pasture-from" value="09:00">
+                        </div>
+                        <div class="form-group">
+                            <label>Till</label>
+                            <input type="time" id="care-pasture-to" value="15:00">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>📝 Specialkost / Anteckningar</label>
+                    <textarea id="care-notes" rows="3" placeholder="T.ex. extra hö, medicin, allergier..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('care')">Avbryt</button>
+                <button class="btn btn-primary" onclick="saveCare()">Spara vårdschema</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // =====================================================
         // FIREBASE CONFIGURATION
@@ -1830,7 +2022,7 @@ Exempel:
         // =====================================================
         // VERSION CONTROL - Ändra detta vid varje uppdatering
         // =====================================================
-        const APP_VERSION = "5.5";
+        const APP_VERSION = "5.9";
 
         // =====================================================
         // Firebase Initialization
@@ -1890,6 +2082,7 @@ Exempel:
             courses: [],
             bookings: [],
             groups: [],
+            care: [],
             notes: '',
             settings: {
                 levels: ['Blå', 'Gul', 'Grön', 'Röd', 'Vit', 'Nybörjare Grupp', 'Prova på'],
@@ -1931,6 +2124,9 @@ Exempel:
             if (type === 'group') {
                 populateGroupDropdowns();
             }
+            if (type === 'care') {
+                populateCareDropdowns();
+            }
         }
 
         function closeModal(type) {
@@ -1952,6 +2148,10 @@ Exempel:
             if (type === 'group') {
                 delete document.getElementById('modal-group').dataset.editingId;
                 document.querySelector('#modal-group .modal-header h3').textContent = 'Skapa grupp';
+            }
+            if (type === 'care') {
+                delete document.getElementById('modal-care').dataset.editingId;
+                document.querySelector('#modal-care .modal-header h3').textContent = 'Lägg till vårdschema';
             }
         }
 
@@ -2325,6 +2525,7 @@ Exempel:
         function renderCalendar() {
             const monthNames = ['Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni', 
                                'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December'];
+            const dayNames = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
             
             const year = currentCalendarDate.getFullYear();
             const month = currentCalendarDate.getMonth();
@@ -2339,6 +2540,15 @@ Exempel:
             // Get previous month days
             const prevMonthLastDay = new Date(year, month, 0).getDate();
             
+            // Get recurring group days
+            const recurringDays = {};
+            if (data.groups) {
+                data.groups.filter(g => g.recurring !== false).forEach(g => {
+                    if (!recurringDays[g.day]) recurringDays[g.day] = 0;
+                    recurringDays[g.day]++;
+                });
+            }
+            
             let html = '';
             const today = new Date();
             
@@ -2352,7 +2562,10 @@ Exempel:
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
                 const dateStr = formatDateForBooking(date);
+                const dayName = dayNames[date.getDay()];
                 const hasBookings = data.bookings.some(b => b.date === dateStr);
+                const hasGroups = recurringDays[dayName] > 0;
+                const groupCount = recurringDays[dayName] || 0;
                 const isToday = date.toDateString() === today.toDateString();
                 const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
                 
@@ -2360,8 +2573,18 @@ Exempel:
                 if (isToday) classes += ' today';
                 if (isSelected) classes += ' selected';
                 if (hasBookings) classes += ' has-bookings';
+                if (hasGroups) classes += ' has-groups';
                 
-                html += `<div class="${classes}" onclick="selectDate(${year}, ${month}, ${day})">${day}</div>`;
+                // Show indicator dots
+                let indicators = '';
+                if (hasBookings || hasGroups) {
+                    indicators = '<div class="calendar-indicators">';
+                    if (hasGroups) indicators += `<span class="indicator-group" title="${groupCount} grupp(er)">🔄</span>`;
+                    if (hasBookings) indicators += '<span class="indicator-booking"></span>';
+                    indicators += '</div>';
+                }
+                
+                html += `<div class="${classes}" onclick="selectDate(${year}, ${month}, ${day})">${day}${indicators}</div>`;
             }
             
             // Next month days
@@ -2402,6 +2625,9 @@ Exempel:
             const dayName = getDayName(date);
             const dayBookings = data.bookings.filter(b => b.date === dateStr);
             
+            // Get recurring groups for this day
+            const recurringGroups = data.groups ? data.groups.filter(g => g.recurring !== false && g.day === dayName) : [];
+            
             const monthNames = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 
                                'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
             
@@ -2410,7 +2636,7 @@ Exempel:
             
             const container = document.getElementById('day-bookings-list');
             
-            if (dayBookings.length === 0) {
+            if (dayBookings.length === 0 && recurringGroups.length === 0) {
                 container.innerHTML = `
                     <p class="no-bookings">Inga bokningar denna dag</p>
                     <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="quickBookDate('${dateStr}')">+ Lägg till bokning</button>
@@ -2418,10 +2644,29 @@ Exempel:
                 return;
             }
             
-            // Sort by time
+            let html = '';
+            
+            // Show recurring groups first
+            if (recurringGroups.length > 0) {
+                html += recurringGroups.map(g => {
+                    const course = data.courses.find(c => c.id === g.courseId);
+                    const memberCount = g.memberIds ? g.memberIds.length : 0;
+                    return `
+                        <div class="day-booking-item" style="background: linear-gradient(135deg, var(--gold-light), var(--gold));">
+                            <div class="day-booking-time">${g.time}</div>
+                            <div class="day-booking-info">
+                                <div class="day-booking-course">🔄 ${g.name}</div>
+                                <div class="day-booking-details">${course ? course.name : ''} • ${memberCount} deltagare</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Sort bookings by time
             dayBookings.sort((a, b) => a.time.localeCompare(b.time));
             
-            container.innerHTML = dayBookings.map(b => {
+            html += dayBookings.map(b => {
                 const course = data.courses.find(c => c.id === b.courseId);
                 const member = data.members.find(m => m.id === b.memberId);
                 const horse = data.horses.find(h => h.id === b.horseId);
@@ -2435,9 +2680,11 @@ Exempel:
                         <button class="btn btn-small btn-danger" onclick="deleteBooking(${b.id})">×</button>
                     </div>
                 `;
-            }).join('') + `
-                <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="quickBookDate('${dateStr}')">+ Lägg till bokning</button>
-            `;
+            }).join('');
+            
+            html += `<button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="quickBookDate('${dateStr}')">+ Lägg till bokning</button>`;
+            
+            container.innerHTML = html;
         }
 
         function changeMonth(delta) {
@@ -2662,6 +2909,7 @@ Exempel:
                         courses: data.courses,
                         bookings: data.bookings,
                         groups: data.groups,
+                        care: data.care,
                         notes: data.notes,
                         settings: data.settings,
                         appVersion: APP_VERSION,
@@ -2800,6 +3048,9 @@ Exempel:
                         if (loadedData.groups) {
                             data.groups = loadedData.groups;
                         }
+                        if (loadedData.care) {
+                            data.care = loadedData.care;
+                        }
                         if (loadedData.notes) {
                             data.notes = loadedData.notes;
                         }
@@ -2834,6 +3085,9 @@ Exempel:
                 }
                 if (loadedData.groups) {
                     data.groups = loadedData.groups;
+                }
+                if (loadedData.care) {
+                    data.care = loadedData.care;
                 }
                 if (loadedData.notes) {
                     data.notes = loadedData.notes;
@@ -2941,8 +3195,10 @@ Exempel:
             renderHorses();
             renderCourses();
             renderGroups();
+            renderCare();
             renderSchedule();
             renderTodayBookings();
+            renderUpcomingBookings();
             renderSettings();
             loadNotes();
             updateStats();
@@ -3010,6 +3266,7 @@ Exempel:
                     const member = data.members.find(m => m.id === id);
                     return member ? member.firstname : 'Okänd';
                 }) : [];
+                const recurringBadge = g.recurring !== false ? '<span class="badge" style="background: var(--gold); color: var(--forest-deep);">🔄 Varje vecka</span>' : '<span class="badge">Engångstillfälle</span>';
 
                 return `
                     <div class="group-card">
@@ -3018,6 +3275,10 @@ Exempel:
                             <p>${g.description || ''}</p>
                         </div>
                         <div class="group-card-body">
+                            <div class="group-info-row">
+                                <span>Schema:</span>
+                                ${recurringBadge}
+                            </div>
                             <div class="group-info-row">
                                 <span>Dag & tid:</span>
                                 <strong>${g.day} ${g.time}</strong>
@@ -3049,6 +3310,7 @@ Exempel:
             const groupData = {
                 name: document.getElementById('group-name').value,
                 description: document.getElementById('group-description').value,
+                recurring: document.getElementById('group-recurring').checked,
                 day: document.getElementById('group-day').value,
                 time: document.getElementById('group-time').value,
                 courseId: parseInt(document.getElementById('group-course').value),
@@ -3077,6 +3339,7 @@ Exempel:
 
             closeModal('group');
             renderGroups();
+            renderSchedule();
             saveData();
         }
 
@@ -3086,6 +3349,7 @@ Exempel:
 
             document.getElementById('group-name').value = group.name || '';
             document.getElementById('group-description').value = group.description || '';
+            document.getElementById('group-recurring').checked = group.recurring !== false;
             document.getElementById('group-day').value = group.day || 'Måndag';
             document.getElementById('group-time').value = group.time || '09:00';
             
@@ -3345,6 +3609,216 @@ Exempel:
                 status.textContent = '';
                 status.classList.remove('saved');
             }, 3000);
+        }
+
+        // =====================================================
+        // Care Functions (Vårdnad)
+        // =====================================================
+
+        function populateCareDropdowns() {
+            const horseSelect = document.getElementById('care-horse');
+            horseSelect.innerHTML = data.horses.map(h => 
+                `<option value="${h.id}">${h.name}</option>`
+            ).join('');
+        }
+
+        function renderCare() {
+            const grid = document.getElementById('care-grid');
+            
+            if (!data.care || data.care.length === 0) {
+                grid.innerHTML = `
+                    <div class="card" style="grid-column: 1/-1; text-align: center; padding: 2rem;">
+                        <p style="color: var(--forest-light);">Inga vårdscheman skapade än</p>
+                        <button class="btn btn-primary" style="margin-top: 1rem;" onclick="openModal('care')">+ Lägg till första schemat</button>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = data.care.map(c => {
+                const horse = data.horses.find(h => h.id === c.horseId);
+                const feedTimes = [];
+                if (c.feedMorning) feedTimes.push('07:00');
+                if (c.feedNoon) feedTimes.push('12:00');
+                if (c.feedEvening) feedTimes.push('18:00');
+
+                return `
+                    <div class="care-card">
+                        <div class="care-card-header">
+                            <span class="horse-emoji">🐴</span>
+                            <h4>${horse ? horse.name : 'Okänd häst'}</h4>
+                        </div>
+                        <div class="care-card-body">
+                            <div class="care-section">
+                                <div class="care-section-title">🍎 Utfodring</div>
+                                <div class="care-times">
+                                    ${feedTimes.map(t => `<span class="care-time-badge active">${t}</span>`).join('')}
+                                    ${feedTimes.length === 0 ? '<span class="care-time-badge">Ej inställt</span>' : ''}
+                                </div>
+                            </div>
+                            <div class="care-section">
+                                <div class="care-section-title">🌿 Hagvistelse</div>
+                                <div class="care-times">
+                                    <span class="care-time-badge active">${c.pastureFrom || '09:00'} - ${c.pastureTo || '15:00'}</span>
+                                </div>
+                            </div>
+                            ${c.notes ? `
+                            <div class="care-section">
+                                <div class="care-section-title">📝 Anteckningar</div>
+                                <p style="color: var(--forest-medium); font-size: 0.9rem;">${c.notes}</p>
+                            </div>
+                            ` : ''}
+                            <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                <button class="btn btn-small" onclick="editCare(${c.id})">✏️ Redigera</button>
+                                <button class="btn btn-small btn-danger" onclick="deleteCare(${c.id})">🗑️ Ta bort</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function saveCare() {
+            const editingId = document.getElementById('modal-care').dataset.editingId;
+            
+            const careData = {
+                horseId: parseInt(document.getElementById('care-horse').value),
+                feedMorning: document.getElementById('care-feed-morning').checked,
+                feedNoon: document.getElementById('care-feed-noon').checked,
+                feedEvening: document.getElementById('care-feed-evening').checked,
+                pastureFrom: document.getElementById('care-pasture-from').value,
+                pastureTo: document.getElementById('care-pasture-to').value,
+                notes: document.getElementById('care-notes').value
+            };
+
+            if (editingId) {
+                const care = data.care.find(c => c.id === parseInt(editingId));
+                if (care) {
+                    Object.assign(care, careData);
+                }
+                delete document.getElementById('modal-care').dataset.editingId;
+                document.querySelector('#modal-care .modal-header h3').textContent = 'Lägg till vårdschema';
+            } else {
+                careData.id = Date.now();
+                if (!data.care) data.care = [];
+                data.care.push(careData);
+            }
+
+            closeModal('care');
+            renderCare();
+            saveData();
+        }
+
+        function editCare(id) {
+            const care = data.care.find(c => c.id === id);
+            if (!care) return;
+
+            populateCareDropdowns();
+            
+            document.getElementById('care-horse').value = care.horseId || '';
+            document.getElementById('care-feed-morning').checked = care.feedMorning !== false;
+            document.getElementById('care-feed-noon').checked = care.feedNoon || false;
+            document.getElementById('care-feed-evening').checked = care.feedEvening !== false;
+            document.getElementById('care-pasture-from').value = care.pastureFrom || '09:00';
+            document.getElementById('care-pasture-to').value = care.pastureTo || '15:00';
+            document.getElementById('care-notes').value = care.notes || '';
+
+            document.getElementById('modal-care').dataset.editingId = id;
+            document.querySelector('#modal-care .modal-header h3').textContent = 'Redigera vårdschema';
+            openModal('care');
+        }
+
+        function deleteCare(id) {
+            const care = data.care.find(c => c.id === id);
+            const horse = care ? data.horses.find(h => h.id === care.horseId) : null;
+            if (confirm(`Är du säker på att du vill ta bort vårdschemat för "${horse ? horse.name : 'denna häst'}"?`)) {
+                data.care = data.care.filter(c => c.id !== id);
+                renderCare();
+                saveData();
+            }
+        }
+
+        // =====================================================
+        // Upcoming Bookings
+        // =====================================================
+
+        function renderUpcomingBookings() {
+            const container = document.getElementById('upcoming-bookings');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Get future bookings
+            const futureBookings = data.bookings
+                .filter(b => {
+                    const bookingDate = new Date(b.date);
+                    bookingDate.setHours(0, 0, 0, 0);
+                    return bookingDate > today;
+                })
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+                .slice(0, 10); // Show max 10 upcoming
+            
+            // Get recurring groups for this week
+            const dayNames = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
+            const upcomingGroups = [];
+            
+            if (data.groups) {
+                data.groups.filter(g => g.recurring !== false).forEach(g => {
+                    const course = data.courses.find(c => c.id === g.courseId);
+                    upcomingGroups.push({
+                        type: 'group',
+                        name: g.name,
+                        day: g.day,
+                        time: g.time,
+                        course: course ? course.name : '',
+                        memberCount: g.memberIds ? g.memberIds.length : 0
+                    });
+                });
+            }
+
+            if (futureBookings.length === 0 && upcomingGroups.length === 0) {
+                container.innerHTML = `<p class="no-bookings">Inga kommande bokningar</p>`;
+                return;
+            }
+
+            let html = '';
+            
+            // Show recurring groups
+            if (upcomingGroups.length > 0) {
+                html += '<h4 style="grid-column: 1/-1; color: var(--forest-medium); margin-bottom: 0.5rem;">🔄 Återkommande grupper</h4>';
+                html += upcomingGroups.map(g => `
+                    <div class="card" style="padding: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong>${g.name}</strong>
+                            <span class="badge">${g.day} ${g.time}</span>
+                        </div>
+                        <p style="font-size: 0.9rem; color: var(--forest-light); margin: 0.5rem 0 0;">${g.course} • ${g.memberCount} deltagare</p>
+                    </div>
+                `).join('');
+            }
+            
+            // Show future bookings
+            if (futureBookings.length > 0) {
+                html += '<h4 style="grid-column: 1/-1; color: var(--forest-medium); margin: 1rem 0 0.5rem;">📅 Enskilda bokningar</h4>';
+                html += futureBookings.map(b => {
+                    const member = data.members.find(m => m.id === b.memberId);
+                    const horse = data.horses.find(h => h.id === b.horseId);
+                    const course = data.courses.find(c => c.id === b.courseId);
+                    const bookingDate = new Date(b.date);
+                    const dateStr = bookingDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' });
+                    
+                    return `
+                        <div class="card" style="padding: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong>${member ? member.firstname : 'Okänd'}</strong>
+                                <span class="badge">${dateStr} ${b.time}</span>
+                            </div>
+                            <p style="font-size: 0.9rem; color: var(--forest-light); margin: 0.5rem 0 0;">${course ? course.name : ''} • ${horse ? horse.name : ''}</p>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            container.innerHTML = html;
         }
 
         // Start the app when everything is loaded
