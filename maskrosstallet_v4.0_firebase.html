@@ -1,0 +1,2240 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maskrosstallet - Schema & Administration v4.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    
+    <style>
+        :root {
+            --forest-deep: #1a2f23;
+            --forest-medium: #2d4a3e;
+            --forest-light: #3d6b5a;
+            --cream: #f5f2eb;
+            --cream-dark: #e8e3d8;
+            --gold: #c9a959;
+            --gold-light: #ddc175;
+            --rust: #a65d3f;
+            --rust-light: #c77d5e;
+            --white: #ffffff;
+            --shadow: rgba(26, 47, 35, 0.15);
+            --shadow-strong: rgba(26, 47, 35, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans 3', sans-serif;
+            background: var(--cream);
+            color: var(--forest-deep);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--cream);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--cream-dark);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            color: var(--forest-medium);
+            font-size: 1.1rem;
+        }
+
+        .connection-status {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            z-index: 1000;
+        }
+
+        .connection-status.online {
+            background: #a8d5ba;
+            color: var(--forest-deep);
+        }
+
+        .connection-status.offline {
+            background: var(--rust);
+            color: white;
+        }
+
+        .connection-status.config-needed {
+            background: var(--gold);
+            color: var(--forest-deep);
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--forest-deep) 0%, var(--forest-medium) 100%);
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 20 L50 20 L38 30 L43 45 L30 35 L17 45 L22 30 L10 20 L25 20 Z' fill='%23c9a959' opacity='0.05'/%3E%3C/svg%3E");
+            opacity: 0.3;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .logo h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--cream);
+            font-weight: 600;
+        }
+
+        .logo span {
+            display: block;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.85rem;
+            color: var(--gold-light);
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .version-badge {
+            background: var(--gold);
+            color: var(--forest-deep);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            background: var(--forest-medium);
+            padding: 0 2rem;
+        }
+
+        .nav-tabs ul {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            list-style: none;
+            gap: 0.5rem;
+        }
+
+        .nav-tabs li {
+            position: relative;
+        }
+
+        .nav-tabs button {
+            background: transparent;
+            border: none;
+            padding: 1rem 1.5rem;
+            color: var(--cream-dark);
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-tabs button:hover {
+            color: var(--gold-light);
+        }
+
+        .nav-tabs button.active {
+            color: var(--gold);
+            border-bottom-color: var(--gold);
+            background: rgba(201, 169, 89, 0.1);
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            color: var(--forest-deep);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-header h2::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: var(--gold);
+            border-radius: 2px;
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px var(--shadow);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(201, 169, 89, 0.2);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px var(--shadow-strong);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .member-avatar {
+            background: linear-gradient(135deg, var(--forest-light), var(--forest-medium));
+            color: var(--cream);
+        }
+
+        .horse-avatar {
+            background: linear-gradient(135deg, var(--rust), var(--rust-light));
+            color: var(--cream);
+        }
+
+        .card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--forest-deep);
+        }
+
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: var(--forest-light);
+        }
+
+        .card-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            border-bottom: 1px dashed var(--cream-dark);
+        }
+
+        .detail-label {
+            color: var(--forest-light);
+        }
+
+        .detail-value {
+            font-weight: 500;
+            color: var(--forest-deep);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-gold {
+            background: var(--gold-light);
+            color: var(--forest-deep);
+        }
+
+        .badge-green {
+            background: #a8d5ba;
+            color: var(--forest-deep);
+        }
+
+        .badge-rust {
+            background: #f0c8b8;
+            color: var(--rust);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.7rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--forest-medium);
+            color: var(--cream);
+        }
+
+        .btn-primary:hover {
+            background: var(--forest-deep);
+        }
+
+        .btn-secondary {
+            background: var(--gold);
+            color: var(--forest-deep);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gold-light);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--forest-light);
+            color: var(--forest-medium);
+        }
+
+        .btn-outline:hover {
+            background: var(--forest-light);
+            color: var(--cream);
+        }
+
+        .btn-small {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-danger {
+            background: var(--rust);
+            color: var(--cream);
+        }
+
+        .btn-danger:hover {
+            background: var(--rust-light);
+        }
+
+        /* Schedule Section */
+        .schedule-container {
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px var(--shadow);
+        }
+
+        .schedule-header {
+            background: linear-gradient(135deg, var(--forest-deep), var(--forest-medium));
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .schedule-header h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--cream);
+            font-size: 1.3rem;
+        }
+
+        .week-nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .week-nav button {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--cream);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .week-nav button:hover {
+            background: var(--gold);
+            color: var(--forest-deep);
+        }
+
+        .week-nav span {
+            color: var(--gold-light);
+            font-weight: 500;
+        }
+
+        /* Calendar Styles */
+        .calendar-container {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-header h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--forest-deep);
+        }
+
+        .cal-nav-btn {
+            background: var(--cream);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.3rem;
+            color: var(--forest-medium);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cal-nav-btn:hover {
+            background: var(--gold);
+            color: var(--forest-deep);
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .calendar-weekdays span {
+            padding: 0.5rem;
+            font-weight: 600;
+            color: var(--forest-light);
+            font-size: 0.85rem;
+        }
+
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background: var(--cream);
+        }
+
+        .calendar-day.other-month {
+            color: var(--cream-dark);
+        }
+
+        .calendar-day.today {
+            border: 2px solid var(--gold);
+        }
+
+        .calendar-day.selected {
+            background: var(--forest-medium);
+            color: var(--white);
+        }
+
+        .calendar-day.has-bookings::after {
+            content: '';
+            position: absolute;
+            bottom: 6px;
+            width: 6px;
+            height: 6px;
+            background: var(--rust);
+            border-radius: 50%;
+        }
+
+        .calendar-day.selected.has-bookings::after {
+            background: var(--gold);
+        }
+
+        .day-schedule {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px var(--shadow);
+        }
+
+        .day-schedule h4 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: var(--forest-deep);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--cream);
+        }
+
+        .day-booking-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--cream);
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--gold);
+        }
+
+        .day-booking-time {
+            font-weight: 600;
+            color: var(--forest-medium);
+            font-size: 0.85rem;
+            min-width: 50px;
+        }
+
+        .day-booking-info {
+            flex: 1;
+        }
+
+        .day-booking-course {
+            font-weight: 600;
+            color: var(--forest-deep);
+            margin-bottom: 0.25rem;
+        }
+
+        .day-booking-details {
+            font-size: 0.85rem;
+            color: var(--forest-light);
+        }
+
+        .no-bookings {
+            text-align: center;
+            color: var(--forest-light);
+            padding: 2rem;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 100px repeat(7, 1fr);
+            gap: 1px;
+            background: var(--cream-dark);
+        }
+
+        .schedule-cell {
+            background: var(--white);
+            padding: 0.75rem;
+            min-height: 80px;
+        }
+
+        .schedule-time {
+            background: var(--cream);
+            font-weight: 600;
+            color: var(--forest-medium);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        .schedule-day-header {
+            background: var(--forest-light);
+            color: var(--cream);
+            text-align: center;
+            font-weight: 600;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .schedule-slot {
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 100%);
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .schedule-slot:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .schedule-slot .course-name {
+            font-weight: 600;
+            color: var(--forest-deep);
+            margin-bottom: 0.25rem;
+        }
+
+        .schedule-slot .slot-details {
+            font-size: 0.7rem;
+            color: var(--forest-medium);
+        }
+
+        .slot-empty {
+            background: var(--cream);
+            border: 2px dashed var(--cream-dark);
+            border-radius: 8px;
+            height: 100%;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--forest-light);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slot-empty:hover {
+            border-color: var(--gold);
+            background: rgba(201, 169, 89, 0.1);
+        }
+
+        /* Courses List */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .course-card {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px var(--shadow);
+        }
+
+        .course-card-header {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .course-level-p {
+            background: linear-gradient(135deg, #7eb89a, #5a9e78);
+        }
+
+        .course-level-j {
+            background: linear-gradient(135deg, #6ba3c9, #4a8ab3);
+        }
+
+        .course-level-s {
+            background: linear-gradient(135deg, #c99a6b, #b3844a);
+        }
+
+        .course-level-spec {
+            background: linear-gradient(135deg, #9b7bb8, #7d5a9e);
+        }
+
+        .course-card-header h4 {
+            font-family: 'Playfair Display', serif;
+            color: var(--white);
+            font-size: 1.1rem;
+        }
+
+        .course-card-header .badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: var(--white);
+        }
+
+        .course-card-body {
+            padding: 1.5rem;
+        }
+
+        .course-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 47, 35, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--forest-deep), var(--forest-medium));
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--cream);
+            font-size: 1.3rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--cream);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--forest-deep);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--cream-dark);
+            border-radius: 8px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(201, 169, 89, 0.2);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 2rem 2rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        /* Stats Overview */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 20px var(--shadow);
+            border-top: 4px solid var(--gold);
+        }
+
+        .stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--forest-deep);
+        }
+
+        .stat-label {
+            color: var(--forest-light);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Action Bar */
+        .action-bar {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .schedule-grid {
+                grid-template-columns: 80px repeat(7, 1fr);
+                font-size: 0.8rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-tabs ul {
+                overflow-x: auto;
+            }
+        }
+
+        /* Booking details in slot */
+        .booking-item {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 4px;
+            padding: 0.3rem 0.5rem;
+            margin-top: 0.3rem;
+            font-size: 0.7rem;
+        }
+
+        .booking-item .member-name {
+            font-weight: 600;
+        }
+
+        .booking-item .horse-name {
+            color: var(--rust);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Laddar Maskrosstallet...</div>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="connection-status config-needed" id="connection-status">⚙️ Firebase ej konfigurerad</div>
+
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🐴</div>
+                <div>
+                    <h1>Maskrosstallet</h1>
+                    <span>Grundat 2022 • Gamlestaden</span>
+                </div>
+            </div>
+            <div class="version-badge">Version 4.0</div>
+        </div>
+    </header>
+
+    <nav class="nav-tabs">
+        <ul>
+            <li><button class="active" data-tab="overview">📊 Översikt</button></li>
+            <li><button data-tab="schedule">📅 Schema</button></li>
+            <li><button data-tab="members">👥 Medlemmar</button></li>
+            <li><button data-tab="horses">🐎 Hästar</button></li>
+            <li><button data-tab="courses">📚 Kurser</button></li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-members">0</div>
+                    <div class="stat-label">Aktiva medlemmar</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-horses">0</div>
+                    <div class="stat-label">Hästar tillgängliga</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-courses">0</div>
+                    <div class="stat-label">Kurser denna vecka</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-bookings">0</div>
+                    <div class="stat-label">Bokningar idag</div>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h2>Snabbåtgärder</h2>
+            </div>
+            <div class="action-bar">
+                <button class="btn btn-primary" onclick="openModal('booking')">📝 Ny bokning</button>
+                <button class="btn btn-secondary" onclick="openModal('member')">👤 Lägg till medlem</button>
+                <button class="btn btn-outline" onclick="openModal('horse')">🐴 Lägg till häst</button>
+            </div>
+
+            <div class="section-header" style="margin-top: 2rem;">
+                <h2>Dagens bokningar</h2>
+            </div>
+            <div id="today-bookings" class="card-grid"></div>
+        </div>
+
+        <!-- Schedule Tab -->
+        <div id="schedule" class="tab-content">
+            <div class="section-header">
+                <h2>Veckans schema</h2>
+                <button class="btn btn-primary" onclick="openModal('booking')">+ Ny bokning</button>
+            </div>
+
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+                    <h3 id="current-month">December 2025</h3>
+                    <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+                </div>
+                <div class="calendar-weekdays">
+                    <span>S</span>
+                    <span>M</span>
+                    <span>T</span>
+                    <span>O</span>
+                    <span>T</span>
+                    <span>F</span>
+                    <span>L</span>
+                </div>
+                <div class="calendar-days" id="calendar-days">
+                    <!-- Will be populated by JS -->
+                </div>
+            </div>
+            
+            <div class="day-schedule" id="day-schedule">
+                <h4 id="selected-date-title">Välj en dag</h4>
+                <div id="day-bookings-list">
+                    <p class="no-bookings">Klicka på en dag för att se bokningar</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members Tab -->
+        <div id="members" class="tab-content">
+            <div class="section-header">
+                <h2>Medlemmar</h2>
+                <button class="btn btn-primary" onclick="openModal('member')">+ Lägg till medlem</button>
+            </div>
+            <div id="members-grid" class="card-grid"></div>
+        </div>
+
+        <!-- Horses Tab -->
+        <div id="horses" class="tab-content">
+            <div class="section-header">
+                <h2>Våra hästar</h2>
+                <button class="btn btn-primary" onclick="openModal('horse')">+ Lägg till häst</button>
+            </div>
+            <div id="horses-grid" class="card-grid"></div>
+        </div>
+
+        <!-- Courses Tab -->
+        <div id="courses" class="tab-content">
+            <div class="section-header">
+                <h2>Kurser & Nivåer</h2>
+                <button class="btn btn-primary" onclick="openModal('course')">+ Lägg till kurs</button>
+            </div>
+            <div id="courses-grid" class="courses-grid"></div>
+        </div>
+    </main>
+
+    <!-- Member Modal -->
+    <div class="modal-overlay" id="modal-member">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Lägg till medlem</h3>
+                <button class="modal-close" onclick="closeModal('member')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Namn</label>
+                    <input type="text" id="member-firstname">
+                </div>
+                <div class="form-group">
+                    <label>Ridnivå</label>
+                    <select id="member-level">
+                        <option value="Blå">Blå</option>
+                        <option value="Gul">Gul</option>
+                        <option value="Grön">Grön</option>
+                        <option value="Röd">Röd</option>
+                        <option value="Vit">Vit</option>
+                        <option value="Nybörjare Grupp">Nybörjare Grupp</option>
+                        <option value="Prova på">Prova på</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('member')">Avbryt</button>
+                <button class="btn btn-primary" onclick="saveMember()">Spara medlem</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Horse Modal -->
+    <div class="modal-overlay" id="modal-horse">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Lägg till häst</h3>
+                <button class="modal-close" onclick="closeModal('horse')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Foto</label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div id="horse-photo-preview" style="width: 80px; height: 80px; border-radius: 50%; background: var(--cream-dark); display: flex; align-items: center; justify-content: center; font-size: 2rem; overflow: hidden;">🐴</div>
+                        <div>
+                            <input type="file" id="horse-photo" accept="image/*" onchange="previewHorsePhoto(this)" style="display: none;">
+                            <button type="button" class="btn btn-outline btn-small" onclick="document.getElementById('horse-photo').click()">Välj foto</button>
+                            <button type="button" class="btn btn-small" style="margin-left: 0.5rem; background: var(--rust); color: white;" onclick="removeHorsePhoto()">Ta bort</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Namn</label>
+                    <input type="text" id="horse-name">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ras</label>
+                        <input type="text" id="horse-breed">
+                    </div>
+                    <div class="form-group">
+                        <label>Ålder</label>
+                        <input type="number" id="horse-age" min="2" max="35">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Typ</label>
+                        <select id="horse-type">
+                            <option value="A ponny">A ponny</option>
+                            <option value="B ponny">B ponny</option>
+                            <option value="C ponny">C ponny</option>
+                            <option value="G Ponny">G Ponny</option>
+                            <option value="Storhäst">Storhäst</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Färg</label>
+                        <select id="horse-color">
+                            <option value="Brun">Brun</option>
+                            <option value="Ljusbrun">Ljusbrun</option>
+                            <option value="Svart">Svart</option>
+                            <option value="Vit">Vit</option>
+                            <option value="Grå">Grå</option>
+                            <option value="Fläckig">Fläckig</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Lämplig för nivåer</label>
+                    <select id="horse-suitable" multiple size="5">
+                        <option value="Nybörjare">Nybörjare</option>
+                        <option value="P1-P3">Ponny 1-3</option>
+                        <option value="P4-P5">Ponny 4-5</option>
+                        <option value="J1-J3">Junior 1-3</option>
+                        <option value="J4-J5">Junior 4-5</option>
+                        <option value="S1-S3">Senior 1-3</option>
+                        <option value="S4-S5">Senior 4-5</option>
+                        <option value="Hopp">Hoppning</option>
+                        <option value="Dressyr">Dressyr</option>
+                    </select>
+                    <small style="color: var(--forest-light);">Håll Ctrl/Cmd för flera val</small>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="horse-status">
+                        <option value="Tillgänglig">Tillgänglig</option>
+                        <option value="Upptagen">Upptagen</option>
+                        <option value="Vila">Vila</option>
+                        <option value="Veterinärvård">Veterinärvård</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('horse')">Avbryt</button>
+                <button class="btn btn-primary" onclick="saveHorse()">Spara häst</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div class="modal-overlay" id="modal-booking">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Ny bokning</h3>
+                <button class="modal-close" onclick="closeModal('booking')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Kurs</label>
+                    <select id="booking-course"></select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Dag</label>
+                        <select id="booking-day">
+                            <option value="Måndag">Måndag</option>
+                            <option value="Tisdag">Tisdag</option>
+                            <option value="Onsdag">Onsdag</option>
+                            <option value="Torsdag">Torsdag</option>
+                            <option value="Fredag">Fredag</option>
+                            <option value="Lördag">Lördag</option>
+                            <option value="Söndag">Söndag</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tid</label>
+                        <select id="booking-time">
+                            <option value="09:00">09:00</option>
+                            <option value="10:00">10:00</option>
+                            <option value="11:00">11:00</option>
+                            <option value="12:00">12:00</option>
+                            <option value="13:00">13:00</option>
+                            <option value="14:00">14:00</option>
+                            <option value="15:00">15:00</option>
+                            <option value="16:00">16:00</option>
+                            <option value="17:00">17:00</option>
+                            <option value="18:00">18:00</option>
+                            <option value="19:00">19:00</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Medlem</label>
+                    <select id="booking-member"></select>
+                </div>
+                <div class="form-group">
+                    <label>Häst</label>
+                    <select id="booking-horse"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('booking')">Avbryt</button>
+                <button class="btn btn-primary" onclick="saveBooking()">Spara bokning</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Modal -->
+    <div class="modal-overlay" id="modal-course">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Lägg till kurs</h3>
+                <button class="modal-close" onclick="closeModal('course')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Kursnamn</label>
+                    <input type="text" id="course-name">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nivå</label>
+                        <select id="course-level">
+                            <option value="P">Ponny</option>
+                            <option value="J">Junior</option>
+                            <option value="S">Senior</option>
+                            <option value="Spec">Specialkurs</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Längd (minuter)</label>
+                        <input type="number" id="course-duration" min="30" max="120">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Max deltagare</label>
+                        <input type="number" id="course-max" min="1" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label>Typ</label>
+                        <select id="course-type">
+                            <option value="Dressyr">Dressyr</option>
+                            <option value="Hoppning">Hoppning</option>
+                            <option value="Grundridning">Grundridning</option>
+                            <option value="Terrängridning">Terrängridning</option>
+                            <option value="Hästlekis">Hästlekis</option>
+                            <option value="Nybörjare">Nybörjare</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('course')">Avbryt</button>
+                <button class="btn btn-primary" onclick="saveCourse()">Spara kurs</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================
+        // FIREBASE CONFIGURATION
+        // =====================================================
+        // INSTRUKTIONER: Ersätt värdena nedan med din egen Firebase-konfiguration
+        // Hämta den från Firebase Console > Project Settings > Your apps > Web app
+        
+        const firebaseConfig = {
+            apiKey: "DIN_API_KEY_HÄR",
+            authDomain: "ditt-projekt.firebaseapp.com",
+            projectId: "ditt-projekt-id",
+            storageBucket: "ditt-projekt.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abc123def456"
+        };
+
+        // =====================================================
+        // Firebase Initialization
+        // =====================================================
+        let db = null;
+        let storage = null;
+        let useFirebase = false;
+
+        function initFirebase() {
+            try {
+                // Check if config is set
+                if (firebaseConfig.apiKey === "DIN_API_KEY_HÄR") {
+                    console.log('Firebase ej konfigurerad - använder localStorage');
+                    updateConnectionStatus('config-needed', '⚙️ Firebase ej konfigurerad');
+                    return false;
+                }
+
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                storage = firebase.storage();
+                
+                // Enable offline persistence
+                db.enablePersistence().catch(err => {
+                    console.log('Offline persistence error:', err);
+                });
+
+                useFirebase = true;
+                updateConnectionStatus('online', '🟢 Firebase ansluten');
+                console.log('Firebase initierad!');
+                return true;
+            } catch (error) {
+                console.error('Firebase init error:', error);
+                updateConnectionStatus('offline', '🔴 Firebase fel');
+                return false;
+            }
+        }
+
+        function updateConnectionStatus(status, text) {
+            const el = document.getElementById('connection-status');
+            el.className = 'connection-status ' + status;
+            el.textContent = text;
+        }
+
+        // =====================================================
+        // Data Store
+        // =====================================================
+        let data = {
+            members: [
+                { id: 1, firstname: 'Havanna', level: 'Gul' },
+                { id: 2, firstname: 'Sofia', level: 'Gul' },
+                { id: 3, firstname: 'Lisa', level: 'Gul' },
+                { id: 4, firstname: 'Karin', level: 'Röd' },
+                { id: 5, firstname: 'Lejla', level: 'Röd' },
+                { id: 6, firstname: 'Elli', level: 'Grön' }
+            ],
+            horses: [
+                { id: 1, name: 'Rosei', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
+                { id: 2, name: 'Denise', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
+                { id: 3, name: 'Trolle', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
+                { id: 4, name: 'Haffi', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
+                { id: 5, name: 'Joshi', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
+                { id: 6, name: 'Pepsi', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
+                { id: 7, name: 'Diva', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
+                { id: 8, name: 'Pricken', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' },
+                { id: 9, name: 'Herkules', breed: '', age: null, type: 'Ponny', color: '', suitable: [], status: 'Tillgänglig' }
+            ],
+            courses: [
+                { id: 1, name: 'Hästlekis', level: 'P', duration: 45, maxParticipants: 6, type: 'Hästlekis' },
+                { id: 2, name: 'Ponny Nybörjare', level: 'P', duration: 45, maxParticipants: 8, type: 'Nybörjare' },
+                { id: 3, name: 'Ponny Grundridning P1-P3', level: 'P', duration: 45, maxParticipants: 8, type: 'Grundridning' },
+                { id: 4, name: 'Ponny Avancerad P4-P5', level: 'P', duration: 60, maxParticipants: 6, type: 'Grundridning' },
+                { id: 5, name: 'Junior Grundridning J1-J3', level: 'J', duration: 60, maxParticipants: 8, type: 'Grundridning' },
+                { id: 6, name: 'Junior Dressyr J4-J5', level: 'J', duration: 60, maxParticipants: 6, type: 'Dressyr' },
+                { id: 7, name: 'Junior Hoppning J4-J5', level: 'J', duration: 60, maxParticipants: 6, type: 'Hoppning' },
+                { id: 8, name: 'Senior Grundridning S1-S3', level: 'S', duration: 60, maxParticipants: 8, type: 'Grundridning' },
+                { id: 9, name: 'Senior Dressyr S4-S5', level: 'S', duration: 60, maxParticipants: 6, type: 'Dressyr' },
+                { id: 10, name: 'Senior Hoppning S4-S5', level: 'S', duration: 60, maxParticipants: 6, type: 'Hoppning' },
+                { id: 11, name: 'Terrängridning', level: 'Spec', duration: 90, maxParticipants: 4, type: 'Terrängridning' }
+            ],
+            bookings: [],
+            currentWeek: 52,
+            currentYear: 2025
+        };
+
+        // Tab Navigation
+        document.querySelectorAll('.nav-tabs button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Modal functions
+        function openModal(type) {
+            document.getElementById(`modal-${type}`).classList.add('active');
+            if (type === 'booking') {
+                populateBookingDropdowns();
+            }
+        }
+
+        function closeModal(type) {
+            document.getElementById(`modal-${type}`).classList.remove('active');
+            clearForm(type);
+            // Reset modal title and editing ID
+            if (type === 'member') {
+                delete document.getElementById('modal-member').dataset.editingId;
+                document.querySelector('#modal-member .modal-header h3').textContent = 'Lägg till medlem';
+            }
+            if (type === 'horse') {
+                delete document.getElementById('modal-horse').dataset.editingId;
+                document.querySelector('#modal-horse .modal-header h3').textContent = 'Lägg till häst';
+            }
+        }
+
+        // Click outside to close
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Populate booking dropdowns
+        function populateBookingDropdowns() {
+            const courseSelect = document.getElementById('booking-course');
+            const memberSelect = document.getElementById('booking-member');
+            const horseSelect = document.getElementById('booking-horse');
+
+            courseSelect.innerHTML = data.courses.map(c => 
+                `<option value="${c.id}">${c.name} (${c.duration} min)</option>`
+            ).join('');
+
+            memberSelect.innerHTML = data.members.map(m => 
+                `<option value="${m.id}">${m.firstname} ${m.lastname} (${m.level})</option>`
+            ).join('');
+
+            horseSelect.innerHTML = data.horses
+                .filter(h => h.status === 'Tillgänglig')
+                .map(h => `<option value="${h.id}">${h.name} - ${h.type}</option>`)
+                .join('');
+        }
+
+        // Save functions
+        function saveMember() {
+            const editingId = document.getElementById('modal-member').dataset.editingId;
+            
+            const memberData = {
+                firstname: document.getElementById('member-firstname').value,
+                level: document.getElementById('member-level').value
+            };
+            
+            if (!memberData.firstname) {
+                alert('Vänligen fyll i namn');
+                return;
+            }
+
+            if (editingId) {
+                // Edit existing member
+                const member = data.members.find(m => m.id === parseInt(editingId));
+                if (member) {
+                    Object.assign(member, memberData);
+                }
+                delete document.getElementById('modal-member').dataset.editingId;
+                document.querySelector('#modal-member .modal-header h3').textContent = 'Lägg till medlem';
+            } else {
+                // Add new member
+                memberData.id = Date.now();
+                data.members.push(memberData);
+            }
+
+            closeModal('member');
+            renderMembers();
+            updateStats();
+            saveData();
+            clearForm('member');
+        }
+
+        function saveHorse() {
+            const suitableSelect = document.getElementById('horse-suitable');
+            const suitable = Array.from(suitableSelect.selectedOptions).map(o => o.value);
+            const editingId = document.getElementById('modal-horse').dataset.editingId;
+            const photoPreview = document.getElementById('horse-photo-preview');
+            const photo = photoPreview.dataset.photo || (photoPreview.querySelector('img') ? photoPreview.querySelector('img').src : null);
+
+            const horseData = {
+                name: document.getElementById('horse-name').value,
+                breed: document.getElementById('horse-breed').value,
+                age: document.getElementById('horse-age').value ? parseInt(document.getElementById('horse-age').value) : null,
+                type: document.getElementById('horse-type').value,
+                color: document.getElementById('horse-color').value,
+                suitable: suitable,
+                status: document.getElementById('horse-status').value,
+                photo: photo
+            };
+
+            if (!horseData.name) {
+                alert('Vänligen fyll i hästens namn');
+                return;
+            }
+
+            if (editingId) {
+                // Edit existing horse
+                const horse = data.horses.find(h => h.id === parseInt(editingId));
+                if (horse) {
+                    Object.assign(horse, horseData);
+                }
+                delete document.getElementById('modal-horse').dataset.editingId;
+                document.querySelector('#modal-horse .modal-header h3').textContent = 'Lägg till häst';
+            } else {
+                // Add new horse
+                horseData.id = Date.now();
+                data.horses.push(horseData);
+            }
+
+            closeModal('horse');
+            renderHorses();
+            updateStats();
+            saveData();
+            clearForm('horse');
+        }
+
+        function saveBooking() {
+            const booking = {
+                id: Date.now(),
+                courseId: parseInt(document.getElementById('booking-course').value),
+                day: document.getElementById('booking-day').value,
+                time: document.getElementById('booking-time').value,
+                memberId: parseInt(document.getElementById('booking-member').value),
+                horseId: parseInt(document.getElementById('booking-horse').value)
+            };
+
+            data.bookings.push(booking);
+            closeModal('booking');
+            renderSchedule();
+            renderTodayBookings();
+            updateStats();
+            saveData();
+        }
+
+        function saveCourse() {
+            const course = {
+                id: Date.now(),
+                name: document.getElementById('course-name').value,
+                level: document.getElementById('course-level').value,
+                duration: parseInt(document.getElementById('course-duration').value),
+                maxParticipants: parseInt(document.getElementById('course-max').value),
+                type: document.getElementById('course-type').value
+            };
+
+            if (!course.name) {
+                alert('Vänligen fyll i kursnamn');
+                return;
+            }
+
+            data.courses.push(course);
+            closeModal('course');
+            renderCourses();
+            updateStats();
+            saveData();
+            clearForm('course');
+        }
+
+        function clearForm(type) {
+            document.querySelectorAll(`#modal-${type} input, #modal-${type} select`).forEach(el => {
+                if (el.type === 'text' || el.type === 'email' || el.type === 'tel' || el.type === 'number' || el.type === 'file') {
+                    el.value = '';
+                }
+            });
+            // Clear horse photo preview
+            if (type === 'horse') {
+                const preview = document.getElementById('horse-photo-preview');
+                preview.innerHTML = '🐴';
+                delete preview.dataset.photo;
+            }
+        }
+
+        // Delete functions
+        function deleteMember(id) {
+            if (confirm('Är du säker på att du vill ta bort denna medlem?')) {
+                data.members = data.members.filter(m => m.id !== id);
+                data.bookings = data.bookings.filter(b => b.memberId !== id);
+                renderMembers();
+                renderSchedule();
+                updateStats();
+                saveData();
+            }
+        }
+
+        function deleteHorse(id) {
+            if (confirm('Är du säker på att du vill ta bort denna häst?')) {
+                data.horses = data.horses.filter(h => h.id !== id);
+                data.bookings = data.bookings.filter(b => b.horseId !== id);
+                renderHorses();
+                renderSchedule();
+                updateStats();
+                saveData();
+            }
+        }
+
+        function deleteBooking(id) {
+            if (confirm('Är du säker på att du vill ta bort denna bokning?')) {
+                data.bookings = data.bookings.filter(b => b.id !== id);
+                renderSchedule();
+                renderTodayBookings();
+                updateStats();
+                saveData();
+            }
+        }
+
+        // Render functions
+        function renderMembers() {
+            const grid = document.getElementById('members-grid');
+            grid.innerHTML = data.members.map(m => {
+                const levelColors = {
+                    'Blå': 'background: #3b82f6; color: white;',
+                    'Gul': 'background: #eab308; color: #1a2f23;',
+                    'Grön': 'background: #22c55e; color: white;',
+                    'Röd': 'background: #ef4444; color: white;',
+                    'Vit': 'background: #f5f5f5; color: #1a2f23; border: 1px solid #ccc;',
+                    'Nybörjare Grupp': 'background: #8b5cf6; color: white;',
+                    'Prova på': 'background: #f97316; color: white;'
+                };
+                const levelStyle = levelColors[m.level] || 'background: var(--gold); color: var(--forest-deep);';
+                return `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-avatar member-avatar">👤</div>
+                        <div>
+                            <div class="card-title">${m.firstname}</div>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Ridnivå</span>
+                            <span class="badge" style="${levelStyle}">${m.level}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <button class="btn btn-small btn-outline" onclick="editMember(${m.id})">Redigera</button>
+                        <button class="btn btn-small btn-danger" onclick="deleteMember(${m.id})">Ta bort</button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function renderHorses() {
+            const grid = document.getElementById('horses-grid');
+            grid.innerHTML = data.horses.map(h => `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-avatar horse-avatar" style="overflow: hidden;">
+                            ${h.photo ? `<img src="${h.photo}" style="width: 100%; height: 100%; object-fit: cover;">` : '🐴'}
+                        </div>
+                        <div>
+                            <div class="card-title">${h.name}</div>
+                            <div class="card-subtitle">${h.breed || '-'}</div>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Typ</span>
+                            <span class="detail-value">${h.type || '-'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Ålder</span>
+                            <span class="detail-value">${h.age ? h.age + ' år' : '-'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Färg</span>
+                            <span class="detail-value">${h.color || '-'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="badge ${h.status === 'Tillgänglig' ? 'badge-green' : 'badge-rust'}">${h.status || '-'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Lämplig för</span>
+                            <span class="detail-value" style="font-size: 0.8rem;">${h.suitable && h.suitable.length > 0 ? h.suitable.join(', ') : '-'}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <button class="btn btn-small btn-outline" onclick="editHorse(${h.id})">Redigera</button>
+                        <button class="btn btn-small btn-danger" onclick="deleteHorse(${h.id})">Ta bort</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCourses() {
+            const grid = document.getElementById('courses-grid');
+            grid.innerHTML = data.courses.map(c => {
+                const levelClass = c.level === 'P' ? 'course-level-p' : 
+                                  c.level === 'J' ? 'course-level-j' : 
+                                  c.level === 'S' ? 'course-level-s' : 'course-level-spec';
+                return `
+                    <div class="course-card">
+                        <div class="course-card-header ${levelClass}">
+                            <h4>${c.name}</h4>
+                            <span class="badge">${c.type}</span>
+                        </div>
+                        <div class="course-card-body">
+                            <div class="course-info-row">
+                                <span>Längd:</span>
+                                <strong>${c.duration} minuter</strong>
+                            </div>
+                            <div class="course-info-row">
+                                <span>Max deltagare:</span>
+                                <strong>${c.maxParticipants} st</strong>
+                            </div>
+                            <div class="course-info-row">
+                                <span>Nivå:</span>
+                                <strong>${c.level === 'P' ? 'Ponny' : c.level === 'J' ? 'Junior' : c.level === 'S' ? 'Senior' : 'Specialkurs'}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderSchedule() {
+            renderCalendar();
+        }
+
+        // Calendar state
+        let currentCalendarDate = new Date();
+        let selectedDate = null;
+
+        function renderCalendar() {
+            const monthNames = ['Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni', 
+                               'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December'];
+            
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            
+            document.getElementById('current-month').textContent = `${monthNames[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDay = firstDay.getDay(); // 0 = Sunday
+            const daysInMonth = lastDay.getDate();
+            
+            // Get previous month days
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+            
+            let html = '';
+            const today = new Date();
+            
+            // Previous month days
+            for (let i = startDay - 1; i >= 0; i--) {
+                const day = prevMonthLastDay - i;
+                html += `<div class="calendar-day other-month">${day}</div>`;
+            }
+            
+            // Current month days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dayName = getDayName(date);
+                const hasBookings = data.bookings.some(b => b.day === dayName);
+                const isToday = date.toDateString() === today.toDateString();
+                const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+                
+                let classes = 'calendar-day';
+                if (isToday) classes += ' today';
+                if (isSelected) classes += ' selected';
+                if (hasBookings) classes += ' has-bookings';
+                
+                html += `<div class="${classes}" onclick="selectDate(${year}, ${month}, ${day})">${day}</div>`;
+            }
+            
+            // Next month days
+            const totalCells = Math.ceil((startDay + daysInMonth) / 7) * 7;
+            const nextMonthDays = totalCells - (startDay + daysInMonth);
+            for (let day = 1; day <= nextMonthDays; day++) {
+                html += `<div class="calendar-day other-month">${day}</div>`;
+            }
+            
+            document.getElementById('calendar-days').innerHTML = html;
+            
+            // If a date is selected, show its bookings
+            if (selectedDate) {
+                showDayBookings(selectedDate);
+            }
+        }
+
+        function getDayName(date) {
+            const dayNames = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
+            return dayNames[date.getDay()];
+        }
+
+        function selectDate(year, month, day) {
+            selectedDate = new Date(year, month, day);
+            renderCalendar();
+            showDayBookings(selectedDate);
+        }
+
+        function showDayBookings(date) {
+            const dayName = getDayName(date);
+            const dayBookings = data.bookings.filter(b => b.day === dayName);
+            
+            const monthNames = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 
+                               'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+            
+            document.getElementById('selected-date-title').textContent = 
+                `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()} - ${dayName}`;
+            
+            const container = document.getElementById('day-bookings-list');
+            
+            if (dayBookings.length === 0) {
+                container.innerHTML = `
+                    <p class="no-bookings">Inga bokningar denna dag</p>
+                    <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="quickBookDate('${dayName}')">+ Lägg till bokning</button>
+                `;
+                return;
+            }
+            
+            // Sort by time
+            dayBookings.sort((a, b) => a.time.localeCompare(b.time));
+            
+            container.innerHTML = dayBookings.map(b => {
+                const course = data.courses.find(c => c.id === b.courseId);
+                const member = data.members.find(m => m.id === b.memberId);
+                const horse = data.horses.find(h => h.id === b.horseId);
+                return `
+                    <div class="day-booking-item">
+                        <div class="day-booking-time">${b.time}</div>
+                        <div class="day-booking-info">
+                            <div class="day-booking-course">${course ? course.name : 'Okänd kurs'}</div>
+                            <div class="day-booking-details">${member ? member.firstname : 'Okänd'} → ${horse ? horse.name : 'Okänd'}</div>
+                        </div>
+                        <button class="btn btn-small btn-danger" onclick="deleteBooking(${b.id})">×</button>
+                    </div>
+                `;
+            }).join('') + `
+                <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="quickBookDate('${dayName}')">+ Lägg till bokning</button>
+            `;
+        }
+
+        function changeMonth(delta) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function quickBookDate(dayName) {
+            document.getElementById('booking-day').value = dayName;
+            openModal('booking');
+        }
+
+        function renderTodayBookings() {
+            const container = document.getElementById('today-bookings');
+            const today = new Date();
+            const dayNames = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
+            const todayName = dayNames[today.getDay()];
+
+            const todayBookings = data.bookings.filter(b => b.day === todayName);
+
+            if (todayBookings.length === 0) {
+                container.innerHTML = `
+                    <div class="card" style="grid-column: 1/-1; text-align: center; padding: 2rem;">
+                        <p style="color: var(--forest-light);">Inga bokningar idag (${todayName})</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = todayBookings.map(b => {
+                const course = data.courses.find(c => c.id === b.courseId);
+                const member = data.members.find(m => m.id === b.memberId);
+                const horse = data.horses.find(h => h.id === b.horseId);
+                return `
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-avatar" style="background: var(--gold);">🗓️</div>
+                            <div>
+                                <div class="card-title">${b.time}</div>
+                                <div class="card-subtitle">${course ? course.name : 'Okänd kurs'}</div>
+                            </div>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Ryttare</span>
+                                <span class="detail-value">${member ? member.firstname + ' ' + member.lastname : 'Okänd'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Häst</span>
+                                <span class="detail-value">${horse ? horse.name : 'Okänd'}</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-small btn-danger" style="margin-top: 1rem;" onclick="deleteBooking(${b.id})">Avboka</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('stat-members').textContent = data.members.length;
+            document.getElementById('stat-horses').textContent = data.horses.filter(h => h.status === 'Tillgänglig').length;
+            document.getElementById('stat-courses').textContent = data.courses.length;
+            
+            const today = new Date();
+            const dayNames = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
+            const todayName = dayNames[today.getDay()];
+            document.getElementById('stat-bookings').textContent = data.bookings.filter(b => b.day === todayName).length;
+        }
+
+        function changeWeek(delta) {
+            data.currentWeek += delta;
+            if (data.currentWeek > 52) {
+                data.currentWeek = 1;
+                data.currentYear++;
+            } else if (data.currentWeek < 1) {
+                data.currentWeek = 52;
+                data.currentYear--;
+            }
+            document.getElementById('current-week').textContent = `Vecka ${data.currentWeek}, ${data.currentYear}`;
+        }
+
+        function quickBook(day, time) {
+            document.getElementById('booking-day').value = day;
+            document.getElementById('booking-time').value = time;
+            openModal('booking');
+        }
+
+        function showBookingDetails(bookingId) {
+            const booking = data.bookings.find(b => b.id === bookingId);
+            if (!booking) return;
+
+            const course = data.courses.find(c => c.id === booking.courseId);
+            const member = data.members.find(m => m.id === booking.memberId);
+            const horse = data.horses.find(h => h.id === booking.horseId);
+
+            alert(`Bokning:\n\nKurs: ${course?.name}\nTid: ${booking.day} ${booking.time}\nRyttare: ${member?.firstname} ${member?.lastname}\nHäst: ${horse?.name}\n\nKlicka OK för att stänga eller använd Ta bort för att avboka.`);
+        }
+
+        // Edit functions (simplified - opens alert for now)
+        function editMember(id) {
+            const member = data.members.find(m => m.id === id);
+            if (member) {
+                document.getElementById('member-firstname').value = member.firstname || '';
+                document.getElementById('member-level').value = member.level || 'Gul';
+                
+                // Store editing ID
+                document.getElementById('modal-member').dataset.editingId = id;
+                document.querySelector('#modal-member .modal-header h3').textContent = 'Redigera medlem';
+                
+                openModal('member');
+            }
+        }
+
+        function editHorse(id) {
+            const horse = data.horses.find(h => h.id === id);
+            if (horse) {
+                document.getElementById('horse-name').value = horse.name || '';
+                document.getElementById('horse-breed').value = horse.breed || '';
+                document.getElementById('horse-age').value = horse.age || '';
+                document.getElementById('horse-type').value = horse.type || 'A ponny';
+                document.getElementById('horse-color').value = horse.color || 'Brun';
+                document.getElementById('horse-status').value = horse.status || 'Tillgänglig';
+                
+                // Set photo preview
+                const preview = document.getElementById('horse-photo-preview');
+                if (horse.photo) {
+                    preview.innerHTML = `<img src="${horse.photo}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                } else {
+                    preview.innerHTML = '🐴';
+                }
+                
+                // Set suitable levels
+                const suitableSelect = document.getElementById('horse-suitable');
+                Array.from(suitableSelect.options).forEach(opt => {
+                    opt.selected = horse.suitable && horse.suitable.includes(opt.value);
+                });
+                
+                // Store editing ID
+                document.getElementById('modal-horse').dataset.editingId = id;
+                document.querySelector('#modal-horse .modal-header h3').textContent = 'Redigera häst';
+                
+                openModal('horse');
+            }
+        }
+
+        // Horse photo functions
+        function previewHorsePhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Compress image before saving
+                    compressImage(e.target.result, 200, 200, 0.7, function(compressedImage) {
+                        const preview = document.getElementById('horse-photo-preview');
+                        preview.innerHTML = `<img src="${compressedImage}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                        preview.dataset.photo = compressedImage;
+                    });
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function compressImage(base64, maxWidth, maxHeight, quality, callback) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                // Calculate new dimensions
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                callback(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.src = base64;
+        }
+
+        function removeHorsePhoto() {
+            const preview = document.getElementById('horse-photo-preview');
+            preview.innerHTML = '🐴';
+            delete preview.dataset.photo;
+            document.getElementById('horse-photo').value = '';
+        }
+
+        // LocalStorage functions
+        // =====================================================
+        // Data Persistence (Firebase + localStorage fallback)
+        // =====================================================
+        
+        async function saveData() {
+            // Always save to localStorage as backup
+            localStorage.setItem('maskrosstallet_data', JSON.stringify(data));
+            
+            // If Firebase is configured, save there too
+            if (useFirebase && db) {
+                try {
+                    await db.collection('settings').doc('appData').set({
+                        members: data.members,
+                        horses: data.horses,
+                        courses: data.courses,
+                        bookings: data.bookings,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log('Data sparad till Firebase');
+                } catch (error) {
+                    console.error('Firebase save error:', error);
+                }
+            }
+        }
+
+        async function loadData() {
+            // Try Firebase first
+            if (useFirebase && db) {
+                try {
+                    const doc = await db.collection('settings').doc('appData').get();
+                    if (doc.exists) {
+                        const loadedData = doc.data();
+                        data.members = loadedData.members || data.members;
+                        data.horses = loadedData.horses || data.horses;
+                        data.courses = loadedData.courses || data.courses;
+                        data.bookings = loadedData.bookings || data.bookings;
+                        console.log('Data laddad från Firebase');
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Firebase load error:', error);
+                }
+            }
+            
+            // Fallback to localStorage
+            const saved = localStorage.getItem('maskrosstallet_data');
+            if (saved) {
+                const loadedData = JSON.parse(saved);
+                data.members = loadedData.members || data.members;
+                data.horses = loadedData.horses || data.horses;
+                data.courses = loadedData.courses || data.courses;
+                data.bookings = loadedData.bookings || data.bookings;
+                console.log('Data laddad från localStorage');
+            }
+        }
+
+        // Upload image to Firebase Storage
+        async function uploadHorsePhoto(file, horseId) {
+            if (!useFirebase || !storage) {
+                // Fallback to base64
+                return null;
+            }
+            
+            try {
+                const storageRef = storage.ref();
+                const photoRef = storageRef.child(`horses/${horseId}_${Date.now()}.jpg`);
+                
+                // Compress image first
+                const compressedBlob = await compressImageToBlob(file, 400, 400, 0.8);
+                
+                const snapshot = await photoRef.put(compressedBlob);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                
+                console.log('Bild uppladdad till Firebase Storage');
+                return downloadURL;
+            } catch (error) {
+                console.error('Upload error:', error);
+                return null;
+            }
+        }
+
+        function compressImageToBlob(file, maxWidth, maxHeight, quality) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height = Math.round((height * maxWidth) / width);
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width = Math.round((width * maxHeight) / height);
+                                height = maxHeight;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        canvas.toBlob(resolve, 'image/jpeg', quality);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function resetData() {
+            if (confirm('Är du säker på att du vill återställa all data till ursprungsvärdena? Detta går inte att ångra.')) {
+                localStorage.removeItem('maskrosstallet_data');
+                if (useFirebase && db) {
+                    db.collection('settings').doc('appData').delete();
+                }
+                location.reload();
+            }
+        }
+
+        // =====================================================
+        // Initialize Application
+        // =====================================================
+        async function init() {
+            // Show loading
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            
+            // Initialize Firebase
+            initFirebase();
+            
+            // Load data
+            await loadData();
+            
+            // Render UI
+            renderMembers();
+            renderHorses();
+            renderCourses();
+            renderSchedule();
+            renderTodayBookings();
+            updateStats();
+            
+            // Hide loading
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
