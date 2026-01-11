@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v5.9</title>
+    <title>Maskrosstallet - Schema & Administration v6.0</title>
     
     <!-- Förhindra cachning -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -1388,7 +1388,7 @@
                     <span>Grundat 2022 • Gamlestaden</span>
                 </div>
             </div>
-            <div class="version-badge" id="version-badge">Version 4.8</div>
+            <div class="version-badge" id="version-badge">Version 6.0</div>
         </div>
     </header>
 
@@ -1915,14 +1915,6 @@ Exempel:
                     <label>Namn</label>
                     <input type="text" id="teacher-name" placeholder="Lärarens namn...">
                 </div>
-                <div class="form-group">
-                    <label>Telefon</label>
-                    <input type="tel" id="teacher-phone" placeholder="Telefonnummer...">
-                </div>
-                <div class="form-group">
-                    <label>E-post</label>
-                    <input type="email" id="teacher-email" placeholder="E-postadress...">
-                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('teacher')">Avbryt</button>
@@ -2073,7 +2065,7 @@ Exempel:
         // =====================================================
         // VERSION CONTROL - Ändra detta vid varje uppdatering
         // =====================================================
-        const APP_VERSION = "5.9";
+        const APP_VERSION = "6.0";
 
         // =====================================================
         // Firebase Initialization
@@ -2412,9 +2404,7 @@ Exempel:
             const editingId = document.getElementById('modal-teacher').dataset.editingId;
 
             const teacherData = {
-                name: document.getElementById('teacher-name').value,
-                phone: document.getElementById('teacher-phone').value,
-                email: document.getElementById('teacher-email').value
+                name: document.getElementById('teacher-name').value
             };
 
             if (!teacherData.name) {
@@ -2445,8 +2435,6 @@ Exempel:
             if (!teacher) return;
 
             document.getElementById('teacher-name').value = teacher.name || '';
-            document.getElementById('teacher-phone').value = teacher.phone || '';
-            document.getElementById('teacher-email').value = teacher.email || '';
 
             document.getElementById('modal-teacher').dataset.editingId = id;
             document.querySelector('#modal-teacher .modal-header h3').textContent = 'Redigera lärare';
@@ -2512,9 +2500,7 @@ Exempel:
                                 </div>
                             </div>
                             <div class="card-details">
-                                ${t.phone ? `<div class="detail-row"><span class="detail-label">Telefon</span><span class="detail-value">${t.phone}</span></div>` : ''}
-                                ${t.email ? `<div class="detail-row"><span class="detail-label">E-post</span><span class="detail-value">${t.email}</span></div>` : ''}
-                                ${assignedCourses.length > 0 ? `<div class="detail-row"><span class="detail-label">Kurser</span><span class="detail-value">${assignedCourses.map(c => c.name).join(', ')}</span></div>` : ''}
+                                ${assignedCourses.length > 0 ? `<div class="detail-row"><span class="detail-label">Kurser</span><span class="detail-value">${assignedCourses.map(c => c.name).join(', ')}</span></div>` : '<div style="color: var(--forest-light); font-style: italic;">Inga kurser tilldelade</div>'}
                             </div>
                             <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
                                 <button class="btn btn-small" onclick="editTeacher(${t.id})">✏️ Redigera</button>
