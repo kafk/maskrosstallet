@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v6.0</title>
+    <title>Maskrosstallet - Schema & Administration v6.1</title>
     
     <!-- Förhindra cachning -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -1388,7 +1388,7 @@
                     <span>Grundat 2022 • Gamlestaden</span>
                 </div>
             </div>
-            <div class="version-badge" id="version-badge">Version 6.0</div>
+            <div class="version-badge" id="version-badge">Version 6.1</div>
         </div>
     </header>
 
@@ -1401,6 +1401,7 @@
             <li><button data-tab="courses">📚 Kurser</button></li>
             <li><button data-tab="teachers">👨‍🏫 Lärare</button></li>
             <li><button data-tab="groups">👨‍👩‍👧‍👦 Grupper</button></li>
+            <li><button data-tab="competitions">🏆 Tävling</button></li>
             <li><button data-tab="care">🩺 Vårdnad</button></li>
             <li><button data-tab="settings">⚙️ Inställningar</button></li>
         </ul>
@@ -1535,6 +1536,19 @@
                 <button class="btn btn-primary" onclick="openModal('group')">+ Skapa grupp</button>
             </div>
             <div id="groups-grid" class="card-grid"></div>
+        </div>
+
+        <!-- Competitions Tab -->
+        <div id="competitions" class="tab-content">
+            <div class="section-header">
+                <h2>🏆 Tävlingar</h2>
+                <button class="btn btn-primary" onclick="openModal('competition')">+ Lägg till tävling</button>
+            </div>
+
+            <div class="section-header" style="margin-top: 2rem;">
+                <h3>Kommande tävlingar</h3>
+            </div>
+            <div id="competitions-grid" class="card-grid"></div>
         </div>
 
         <!-- Care Tab (Vårdnad) -->
@@ -1923,6 +1937,50 @@ Exempel:
         </div>
     </div>
 
+    <!-- Competition Modal -->
+    <div class="modal-overlay" id="modal-competition">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Lägg till tävling</h3>
+                <button class="modal-close" onclick="closeModal('competition')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Tävlingsnamn</label>
+                    <input type="text" id="competition-name" placeholder="Namn på tävlingen...">
+                </div>
+                <div class="form-group">
+                    <label>Typ av tävling</label>
+                    <select id="competition-type">
+                        <option value="Dressyr">Dressyr</option>
+                        <option value="Hoppning">Hoppning</option>
+                        <option value="Fälttävlan">Fälttävlan</option>
+                        <option value="Distans">Distans</option>
+                        <option value="Working Equitation">Working Equitation</option>
+                        <option value="Barrel Racing">Barrel Racing</option>
+                        <option value="Annat">Annat</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Datum</label>
+                    <input type="date" id="competition-date">
+                </div>
+                <div class="form-group">
+                    <label>Plats</label>
+                    <input type="text" id="competition-location" placeholder="Var hålls tävlingen...">
+                </div>
+                <div class="form-group">
+                    <label>Beskrivning</label>
+                    <textarea id="competition-description" rows="3" placeholder="Mer information om tävlingen..." style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--cream-dark); font-family: inherit;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('competition')">Avbryt</button>
+                <button class="btn btn-primary" onclick="saveCompetition()">Spara tävling</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Group Modal -->
     <div class="modal-overlay" id="modal-group">
         <div class="modal">
@@ -2065,7 +2123,7 @@ Exempel:
         // =====================================================
         // VERSION CONTROL - Ändra detta vid varje uppdatering
         // =====================================================
-        const APP_VERSION = "6.0";
+        const APP_VERSION = "6.1";
 
         // =====================================================
         // Firebase Initialization
@@ -2126,6 +2184,7 @@ Exempel:
             bookings: [],
             groups: [],
             teachers: [],
+            competitions: [],
             care: [],
             notes: '',
             settings: {
@@ -2543,6 +2602,185 @@ Exempel:
                                 </select>
                             </div>
                             ${currentTeacher ? `<div style="margin-top: 0.5rem; padding: 0.5rem; background: var(--gold-light); border-radius: 8px; text-align: center;"><strong>Lärare: ${currentTeacher.name}</strong></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Competition functions
+        function saveCompetition() {
+            const editingId = document.getElementById('modal-competition').dataset.editingId;
+
+            const competitionData = {
+                name: document.getElementById('competition-name').value,
+                type: document.getElementById('competition-type').value,
+                date: document.getElementById('competition-date').value,
+                location: document.getElementById('competition-location').value,
+                description: document.getElementById('competition-description').value,
+                participants: []
+            };
+
+            if (!competitionData.name) {
+                alert('Vänligen fyll i tävlingsnamn');
+                return;
+            }
+
+            if (!competitionData.date) {
+                alert('Vänligen välj ett datum');
+                return;
+            }
+
+            if (editingId) {
+                const competition = data.competitions.find(c => c.id === parseInt(editingId));
+                if (competition) {
+                    competitionData.participants = competition.participants || [];
+                    Object.assign(competition, competitionData);
+                }
+                delete document.getElementById('modal-competition').dataset.editingId;
+                document.querySelector('#modal-competition .modal-header h3').textContent = 'Lägg till tävling';
+            } else {
+                competitionData.id = Date.now();
+                data.competitions.push(competitionData);
+            }
+
+            closeModal('competition');
+            renderCompetitions();
+            saveData();
+            clearForm('competition');
+        }
+
+        function editCompetition(id) {
+            const competition = data.competitions.find(c => c.id === id);
+            if (!competition) return;
+
+            document.getElementById('competition-name').value = competition.name || '';
+            document.getElementById('competition-type').value = competition.type || 'Dressyr';
+            document.getElementById('competition-date').value = competition.date || '';
+            document.getElementById('competition-location').value = competition.location || '';
+            document.getElementById('competition-description').value = competition.description || '';
+
+            document.getElementById('modal-competition').dataset.editingId = id;
+            document.querySelector('#modal-competition .modal-header h3').textContent = 'Redigera tävling';
+            openModal('competition');
+        }
+
+        function deleteCompetition(id) {
+            const competition = data.competitions.find(c => c.id === id);
+            if (confirm(`Är du säker på att du vill ta bort tävlingen "${competition ? competition.name : ''}"?`)) {
+                data.competitions = data.competitions.filter(c => c.id !== id);
+                renderCompetitions();
+                saveData();
+            }
+        }
+
+        function bookCompetition(competitionId, memberId) {
+            const competition = data.competitions.find(c => c.id === competitionId);
+            if (!competition) return;
+
+            if (!competition.participants) {
+                competition.participants = [];
+            }
+
+            const memberIdInt = parseInt(memberId);
+            if (memberIdInt && !competition.participants.includes(memberIdInt)) {
+                competition.participants.push(memberIdInt);
+                renderCompetitions();
+                saveData();
+            }
+        }
+
+        function unbookCompetition(competitionId, memberId) {
+            const competition = data.competitions.find(c => c.id === competitionId);
+            if (!competition) return;
+
+            competition.participants = competition.participants.filter(p => p !== memberId);
+            renderCompetitions();
+            saveData();
+        }
+
+        function renderCompetitions() {
+            const grid = document.getElementById('competitions-grid');
+            if (!grid) return;
+
+            if (data.competitions.length === 0) {
+                grid.innerHTML = `
+                    <div class="card" style="grid-column: 1/-1; text-align: center; padding: 2rem;">
+                        <p style="color: var(--forest-light);">Inga tävlingar tillagda ännu</p>
+                        <button class="btn btn-primary" style="margin-top: 1rem;" onclick="openModal('competition')">+ Lägg till tävling</button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort competitions by date
+            const sortedCompetitions = [...data.competitions].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            grid.innerHTML = sortedCompetitions.map(c => {
+                const competitionDate = new Date(c.date);
+                const dateStr = competitionDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                const isPast = competitionDate < new Date();
+                const participants = c.participants || [];
+                const participantNames = participants.map(pId => {
+                    const member = data.members.find(m => m.id === pId);
+                    return member ? member.firstname : 'Okänd';
+                });
+
+                return `
+                    <div class="card" style="${isPast ? 'opacity: 0.6;' : ''}">
+                        <div class="card-header">
+                            <div class="card-avatar" style="background: var(--gold);">🏆</div>
+                            <div>
+                                <div class="card-title">${c.name}</div>
+                                <div class="card-subtitle">${c.type}</div>
+                            </div>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Datum</span>
+                                <span class="detail-value">${dateStr}</span>
+                            </div>
+                            ${c.location ? `<div class="detail-row">
+                                <span class="detail-label">Plats</span>
+                                <span class="detail-value">${c.location}</span>
+                            </div>` : ''}
+                            ${c.description ? `<div class="detail-row">
+                                <span class="detail-label">Info</span>
+                                <span class="detail-value">${c.description}</span>
+                            </div>` : ''}
+                            <div class="detail-row">
+                                <span class="detail-label">Anmälda</span>
+                                <span class="detail-value">${participants.length} st</span>
+                            </div>
+                            ${participantNames.length > 0 ? `<div style="margin-top: 0.5rem; padding: 0.5rem; background: var(--cream-dark); border-radius: 6px; font-size: 0.9rem;">
+                                ${participantNames.join(', ')}
+                            </div>` : ''}
+                        </div>
+
+                        ${!isPast ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--cream-dark);">
+                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">📝 Boka plats:</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <select id="book-member-${c.id}" style="flex: 1; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--cream-dark);">
+                                    <option value="">-- Välj medlem --</option>
+                                    ${data.members.filter(m => !participants.includes(m.id)).map(m => `<option value="${m.id}">${m.firstname}</option>`).join('')}
+                                </select>
+                                <button class="btn btn-primary btn-small" onclick="bookCompetition(${c.id}, document.getElementById('book-member-${c.id}').value)">Boka</button>
+                            </div>
+                        </div>` : '<div style="margin-top: 1rem; color: var(--rust); font-style: italic;">Tävlingen har redan ägt rum</div>'}
+
+                        ${participants.length > 0 && !isPast ? `<div style="margin-top: 0.5rem;">
+                            <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">❌ Avboka:</label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                ${participants.map(pId => {
+                                    const member = data.members.find(m => m.id === pId);
+                                    return member ? `<button class="btn btn-small btn-danger" onclick="unbookCompetition(${c.id}, ${pId})">${member.firstname} ×</button>` : '';
+                                }).join('')}
+                            </div>
+                        </div>` : ''}
+
+                        <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                            <button class="btn btn-small" onclick="editCompetition(${c.id})">✏️ Redigera</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteCompetition(${c.id})">🗑️ Ta bort</button>
                         </div>
                     </div>
                 `;
@@ -3120,6 +3358,7 @@ Exempel:
                         bookings: data.bookings,
                         groups: data.groups,
                         teachers: data.teachers,
+                        competitions: data.competitions,
                         care: data.care,
                         notes: data.notes,
                         settings: data.settings,
@@ -3262,6 +3501,9 @@ Exempel:
                         if (loadedData.teachers) {
                             data.teachers = loadedData.teachers;
                         }
+                        if (loadedData.competitions) {
+                            data.competitions = loadedData.competitions;
+                        }
                         if (loadedData.care) {
                             data.care = loadedData.care;
                         }
@@ -3302,6 +3544,9 @@ Exempel:
                 }
                 if (loadedData.teachers) {
                     data.teachers = loadedData.teachers;
+                }
+                if (loadedData.competitions) {
+                    data.competitions = loadedData.competitions;
                 }
                 if (loadedData.care) {
                     data.care = loadedData.care;
@@ -3412,6 +3657,7 @@ Exempel:
             renderHorses();
             renderCourses();
             renderTeachers();
+            renderCompetitions();
             renderGroups();
             renderCare();
             renderSchedule();
