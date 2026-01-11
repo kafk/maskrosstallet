@@ -1872,6 +1872,10 @@ Exempel:
                         </select>
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>Lärare</label>
+                    <input type="text" id="course-teacher" placeholder="Ange lärare för kursen...">
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('course')">Avbryt</button>
@@ -2170,8 +2174,8 @@ Exempel:
             const memberSelect = document.getElementById('booking-member');
             const horseSelect = document.getElementById('booking-horse');
 
-            courseSelect.innerHTML = data.courses.map(c => 
-                `<option value="${c.id}">${c.name} (${c.duration} min)</option>`
+            courseSelect.innerHTML = data.courses.map(c =>
+                `<option value="${c.id}">${c.name} (${c.duration} min)${c.teacher ? ' - Lärare: ' + c.teacher : ''}</option>`
             ).join('');
 
             memberSelect.innerHTML = data.members.map(m => 
@@ -2296,7 +2300,8 @@ Exempel:
                 level: document.getElementById('course-level').value,
                 duration: parseInt(document.getElementById('course-duration').value),
                 maxParticipants: parseInt(document.getElementById('course-max').value),
-                type: document.getElementById('course-type').value
+                type: document.getElementById('course-type').value,
+                teacher: document.getElementById('course-teacher').value
             };
 
             if (!courseData.name) {
@@ -2334,6 +2339,7 @@ Exempel:
             document.getElementById('course-duration').value = course.duration || 45;
             document.getElementById('course-max').value = course.maxParticipants || 6;
             document.getElementById('course-type').value = course.type || '';
+            document.getElementById('course-teacher').value = course.teacher || '';
 
             document.getElementById('modal-course').dataset.editingId = id;
             document.querySelector('#modal-course .modal-header h3').textContent = 'Redigera kurs';
@@ -2670,11 +2676,12 @@ Exempel:
                 const course = data.courses.find(c => c.id === b.courseId);
                 const member = data.members.find(m => m.id === b.memberId);
                 const horse = data.horses.find(h => h.id === b.horseId);
+                const teacherInfo = course && course.teacher ? ` • Lärare: ${course.teacher}` : '';
                 return `
                     <div class="day-booking-item">
                         <div class="day-booking-time">${b.time}</div>
                         <div class="day-booking-info">
-                            <div class="day-booking-course">${course ? course.name : 'Okänd kurs'}</div>
+                            <div class="day-booking-course">${course ? course.name : 'Okänd kurs'}${teacherInfo}</div>
                             <div class="day-booking-details">${member ? member.firstname : 'Okänd'} → ${horse ? horse.name : 'Okänd'}</div>
                         </div>
                         <button class="btn btn-small btn-danger" onclick="deleteBooking(${b.id})">×</button>
@@ -2729,6 +2736,10 @@ Exempel:
                             </div>
                         </div>
                         <div class="card-details">
+                            ${course && course.teacher ? `<div class="detail-row">
+                                <span class="detail-label">Lärare</span>
+                                <span class="detail-value">${course.teacher}</span>
+                            </div>` : ''}
                             <div class="detail-row">
                                 <span class="detail-label">Ryttare</span>
                                 <span class="detail-value">${member ? member.firstname + ' ' + member.lastname : 'Okänd'}</span>
@@ -2779,8 +2790,9 @@ Exempel:
             const course = data.courses.find(c => c.id === booking.courseId);
             const member = data.members.find(m => m.id === booking.memberId);
             const horse = data.horses.find(h => h.id === booking.horseId);
+            const teacherInfo = course?.teacher ? `\nLärare: ${course.teacher}` : '';
 
-            alert(`Bokning:\n\nKurs: ${course?.name}\nTid: ${booking.day} ${booking.time}\nRyttare: ${member?.firstname} ${member?.lastname}\nHäst: ${horse?.name}\n\nKlicka OK för att stänga eller använd Ta bort för att avboka.`);
+            alert(`Bokning:\n\nKurs: ${course?.name}${teacherInfo}\nTid: ${booking.day} ${booking.time}\nRyttare: ${member?.firstname} ${member?.lastname}\nHäst: ${horse?.name}\n\nKlicka OK för att stänga eller använd Ta bort för att avboka.`);
         }
 
         // Edit functions (simplified - opens alert for now)
@@ -3805,14 +3817,15 @@ Exempel:
                     const course = data.courses.find(c => c.id === b.courseId);
                     const bookingDate = new Date(b.date);
                     const dateStr = bookingDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' });
-                    
+                    const teacherInfo = course && course.teacher ? ` • Lärare: ${course.teacher}` : '';
+
                     return `
                         <div class="card" style="padding: 1rem;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <strong>${member ? member.firstname : 'Okänd'}</strong>
                                 <span class="badge">${dateStr} ${b.time}</span>
                             </div>
-                            <p style="font-size: 0.9rem; color: var(--forest-light); margin: 0.5rem 0 0;">${course ? course.name : ''} • ${horse ? horse.name : ''}</p>
+                            <p style="font-size: 0.9rem; color: var(--forest-light); margin: 0.5rem 0 0;">${course ? course.name : ''} • ${horse ? horse.name : ''}${teacherInfo}</p>
                         </div>
                     `;
                 }).join('');
