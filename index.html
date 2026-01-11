@@ -1399,6 +1399,7 @@
             <li><button data-tab="members">👥 Medlemmar</button></li>
             <li><button data-tab="horses">🐎 Hästar</button></li>
             <li><button data-tab="courses">📚 Kurser</button></li>
+            <li><button data-tab="teachers">👨‍🏫 Lärare</button></li>
             <li><button data-tab="groups">👨‍👩‍👧‍👦 Grupper</button></li>
             <li><button data-tab="care">🩺 Vårdnad</button></li>
             <li><button data-tab="settings">⚙️ Inställningar</button></li>
@@ -1507,6 +1508,24 @@
                 <button class="btn btn-primary" onclick="openModal('course')">+ Lägg till kurs</button>
             </div>
             <div id="courses-grid" class="courses-grid"></div>
+        </div>
+
+        <!-- Teachers Tab -->
+        <div id="teachers" class="tab-content">
+            <div class="section-header">
+                <h2>👨‍🏫 Lärare</h2>
+                <button class="btn btn-primary" onclick="openModal('teacher')">+ Lägg till lärare</button>
+            </div>
+
+            <div class="section-header" style="margin-top: 2rem;">
+                <h3>Alla lärare</h3>
+            </div>
+            <div id="teachers-grid" class="card-grid"></div>
+
+            <div class="section-header" style="margin-top: 2rem;">
+                <h3>Kurser - Välj lärare</h3>
+            </div>
+            <div id="teacher-courses-grid" class="courses-grid"></div>
         </div>
 
         <!-- Groups Tab -->
@@ -1884,6 +1903,34 @@ Exempel:
         </div>
     </div>
 
+    <!-- Teacher Modal -->
+    <div class="modal-overlay" id="modal-teacher">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Lägg till lärare</h3>
+                <button class="modal-close" onclick="closeModal('teacher')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Namn</label>
+                    <input type="text" id="teacher-name" placeholder="Lärarens namn...">
+                </div>
+                <div class="form-group">
+                    <label>Telefon</label>
+                    <input type="tel" id="teacher-phone" placeholder="Telefonnummer...">
+                </div>
+                <div class="form-group">
+                    <label>E-post</label>
+                    <input type="email" id="teacher-email" placeholder="E-postadress...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('teacher')">Avbryt</button>
+                <button class="btn btn-primary" onclick="saveTeacher()">Spara lärare</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Group Modal -->
     <div class="modal-overlay" id="modal-group">
         <div class="modal">
@@ -2086,6 +2133,7 @@ Exempel:
             courses: [],
             bookings: [],
             groups: [],
+            teachers: [],
             care: [],
             notes: '',
             settings: {
@@ -2359,6 +2407,162 @@ Exempel:
             }
         }
 
+        // Teacher functions
+        function saveTeacher() {
+            const editingId = document.getElementById('modal-teacher').dataset.editingId;
+
+            const teacherData = {
+                name: document.getElementById('teacher-name').value,
+                phone: document.getElementById('teacher-phone').value,
+                email: document.getElementById('teacher-email').value
+            };
+
+            if (!teacherData.name) {
+                alert('Vänligen fyll i lärarens namn');
+                return;
+            }
+
+            if (editingId) {
+                const teacher = data.teachers.find(t => t.id === parseInt(editingId));
+                if (teacher) {
+                    Object.assign(teacher, teacherData);
+                }
+                delete document.getElementById('modal-teacher').dataset.editingId;
+                document.querySelector('#modal-teacher .modal-header h3').textContent = 'Lägg till lärare';
+            } else {
+                teacherData.id = Date.now();
+                data.teachers.push(teacherData);
+            }
+
+            closeModal('teacher');
+            renderTeachers();
+            saveData();
+            clearForm('teacher');
+        }
+
+        function editTeacher(id) {
+            const teacher = data.teachers.find(t => t.id === id);
+            if (!teacher) return;
+
+            document.getElementById('teacher-name').value = teacher.name || '';
+            document.getElementById('teacher-phone').value = teacher.phone || '';
+            document.getElementById('teacher-email').value = teacher.email || '';
+
+            document.getElementById('modal-teacher').dataset.editingId = id;
+            document.querySelector('#modal-teacher .modal-header h3').textContent = 'Redigera lärare';
+            openModal('teacher');
+        }
+
+        function deleteTeacher(id) {
+            const teacher = data.teachers.find(t => t.id === id);
+            if (confirm(`Är du säker på att du vill ta bort läraren "${teacher ? teacher.name : ''}"?`)) {
+                data.teachers = data.teachers.filter(t => t.id !== id);
+                // Clear teacher from courses that had this teacher
+                data.courses.forEach(c => {
+                    if (c.teacherId === id) {
+                        c.teacherId = null;
+                        c.teacher = '';
+                    }
+                });
+                renderTeachers();
+                renderCourses();
+                saveData();
+            }
+        }
+
+        function assignTeacherToCourse(courseId, teacherId) {
+            const course = data.courses.find(c => c.id === courseId);
+            if (!course) return;
+
+            if (teacherId) {
+                const teacher = data.teachers.find(t => t.id === parseInt(teacherId));
+                course.teacherId = parseInt(teacherId);
+                course.teacher = teacher ? teacher.name : '';
+            } else {
+                course.teacherId = null;
+                course.teacher = '';
+            }
+
+            renderTeachers();
+            renderCourses();
+            saveData();
+        }
+
+        function renderTeachers() {
+            const grid = document.getElementById('teachers-grid');
+            if (!grid) return;
+
+            if (data.teachers.length === 0) {
+                grid.innerHTML = `
+                    <div class="card" style="grid-column: 1/-1; text-align: center; padding: 2rem;">
+                        <p style="color: var(--forest-light);">Inga lärare tillagda ännu</p>
+                        <button class="btn btn-primary" style="margin-top: 1rem;" onclick="openModal('teacher')">+ Lägg till lärare</button>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML = data.teachers.map(t => {
+                    const assignedCourses = data.courses.filter(c => c.teacherId === t.id);
+                    return `
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-avatar" style="background: var(--forest-light);">👨‍🏫</div>
+                                <div>
+                                    <div class="card-title">${t.name}</div>
+                                    <div class="card-subtitle">${assignedCourses.length} kurs(er)</div>
+                                </div>
+                            </div>
+                            <div class="card-details">
+                                ${t.phone ? `<div class="detail-row"><span class="detail-label">Telefon</span><span class="detail-value">${t.phone}</span></div>` : ''}
+                                ${t.email ? `<div class="detail-row"><span class="detail-label">E-post</span><span class="detail-value">${t.email}</span></div>` : ''}
+                                ${assignedCourses.length > 0 ? `<div class="detail-row"><span class="detail-label">Kurser</span><span class="detail-value">${assignedCourses.map(c => c.name).join(', ')}</span></div>` : ''}
+                            </div>
+                            <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                <button class="btn btn-small" onclick="editTeacher(${t.id})">✏️ Redigera</button>
+                                <button class="btn btn-small btn-danger" onclick="deleteTeacher(${t.id})">🗑️ Ta bort</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Render teacher course assignment grid
+            const coursesGrid = document.getElementById('teacher-courses-grid');
+            if (!coursesGrid) return;
+
+            coursesGrid.innerHTML = data.courses.map(c => {
+                const levelClass = c.level === 'P' ? 'course-level-p' :
+                                  c.level === 'J' ? 'course-level-j' :
+                                  c.level === 'S' ? 'course-level-s' : 'course-level-spec';
+                const currentTeacher = data.teachers.find(t => t.id === c.teacherId);
+                return `
+                    <div class="course-card">
+                        <div class="course-card-header ${levelClass}">
+                            <h4>${c.name}</h4>
+                            <span class="badge">${c.type}</span>
+                        </div>
+                        <div class="course-card-body">
+                            <div class="course-info-row">
+                                <span>Nivå:</span>
+                                <strong>${c.level === 'P' ? 'Ponny' : c.level === 'J' ? 'Junior' : c.level === 'S' ? 'Senior' : 'Specialkurs'}</strong>
+                            </div>
+                            <div class="course-info-row">
+                                <span>Längd:</span>
+                                <strong>${c.duration} min</strong>
+                            </div>
+                            <div class="form-group" style="margin-top: 1rem;">
+                                <label style="font-weight: 600;">👨‍🏫 Tilldela lärare:</label>
+                                <select onchange="assignTeacherToCourse(${c.id}, this.value)" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--cream-dark);">
+                                    <option value="">-- Välj lärare --</option>
+                                    ${data.teachers.map(t => `<option value="${t.id}" ${c.teacherId === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}
+                                </select>
+                            </div>
+                            ${currentTeacher ? `<div style="margin-top: 0.5rem; padding: 0.5rem; background: var(--gold-light); border-radius: 8px; text-align: center;"><strong>Lärare: ${currentTeacher.name}</strong></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         function clearForm(type) {
             document.querySelectorAll(`#modal-${type} input, #modal-${type} select`).forEach(el => {
                 if (el.type === 'text' || el.type === 'email' || el.type === 'tel' || el.type === 'number' || el.type === 'file' || el.type === 'date') {
@@ -2488,9 +2692,11 @@ Exempel:
         function renderCourses() {
             const grid = document.getElementById('courses-grid');
             grid.innerHTML = data.courses.map(c => {
-                const levelClass = c.level === 'P' ? 'course-level-p' : 
-                                  c.level === 'J' ? 'course-level-j' : 
+                const levelClass = c.level === 'P' ? 'course-level-p' :
+                                  c.level === 'J' ? 'course-level-j' :
                                   c.level === 'S' ? 'course-level-s' : 'course-level-spec';
+                const teacher = c.teacherId ? data.teachers.find(t => t.id === c.teacherId) : null;
+                const teacherName = teacher ? teacher.name : c.teacher;
                 return `
                     <div class="course-card">
                         <div class="course-card-header ${levelClass}">
@@ -2510,6 +2716,12 @@ Exempel:
                                 <span>Nivå:</span>
                                 <strong>${c.level === 'P' ? 'Ponny' : c.level === 'J' ? 'Junior' : c.level === 'S' ? 'Senior' : 'Specialkurs'}</strong>
                             </div>
+                            ${teacherName ? `<div class="course-info-row" style="background: var(--gold-light); padding: 0.5rem; border-radius: 6px; margin-top: 0.5rem;">
+                                <span>👨‍🏫 Lärare:</span>
+                                <strong>${teacherName}</strong>
+                            </div>` : `<div class="course-info-row" style="color: var(--rust); font-style: italic;">
+                                <span>Ingen lärare tilldelad</span>
+                            </div>`}
                         </div>
                         <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
                             <button class="btn btn-small" onclick="editCourse(${c.id})">✏️ Redigera</button>
@@ -2921,6 +3133,7 @@ Exempel:
                         courses: data.courses,
                         bookings: data.bookings,
                         groups: data.groups,
+                        teachers: data.teachers,
                         care: data.care,
                         notes: data.notes,
                         settings: data.settings,
@@ -3060,6 +3273,9 @@ Exempel:
                         if (loadedData.groups) {
                             data.groups = loadedData.groups;
                         }
+                        if (loadedData.teachers) {
+                            data.teachers = loadedData.teachers;
+                        }
                         if (loadedData.care) {
                             data.care = loadedData.care;
                         }
@@ -3097,6 +3313,9 @@ Exempel:
                 }
                 if (loadedData.groups) {
                     data.groups = loadedData.groups;
+                }
+                if (loadedData.teachers) {
+                    data.teachers = loadedData.teachers;
                 }
                 if (loadedData.care) {
                     data.care = loadedData.care;
@@ -3206,6 +3425,7 @@ Exempel:
             renderMembers();
             renderHorses();
             renderCourses();
+            renderTeachers();
             renderGroups();
             renderCare();
             renderSchedule();
