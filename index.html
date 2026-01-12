@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v6.2</title>
+    <title>Maskrosstallet - Schema & Administration v6.3</title>
     
     <!-- Förhindra cachning -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -1606,7 +1606,7 @@
                     <span>Grundat 2022 • Gamlestaden</span>
                 </div>
             </div>
-            <div class="version-badge" id="version-badge">Version 6.2</div>
+            <div class="version-badge" id="version-badge">Version 6.3</div>
         </div>
     </header>
 
@@ -2350,7 +2350,7 @@
         // =====================================================
         // VERSION CONTROL - Ändra detta vid varje uppdatering
         // =====================================================
-        const APP_VERSION = "6.2";
+        const APP_VERSION = "6.3";
 
         // =====================================================
         // Firebase Initialization
@@ -4288,8 +4288,83 @@
         }
 
         function loadNotes() {
-            // Now loads to-do items instead of textarea
+            // Migrate old notes to to-do items if they exist
+            migrateOldNotes();
             renderTodoItems();
+        }
+
+        function migrateOldNotes() {
+            // Check if there are old notes to migrate
+            if (!data.notes || data.notes.trim() === '') return;
+
+            console.log('Migrerar gamla anteckningar till to-do items...');
+
+            const notesText = data.notes.trim();
+
+            // Split by lines and filter out empty lines
+            const lines = notesText.split('\n').filter(line => line.trim() !== '');
+
+            let currentTitle = '';
+            let currentDescription = '';
+            let itemsCreated = 0;
+
+            lines.forEach((line, index) => {
+                const trimmedLine = line.trim();
+
+                // Check if line starts with bullet point or dash (these are likely individual items)
+                if (trimmedLine.match(/^[-•*]\s*/) || trimmedLine.match(/^\d+[.)]\s*/)) {
+                    // If we have a previous item, save it first
+                    if (currentTitle) {
+                        createMigratedTodoItem(currentTitle, currentDescription);
+                        itemsCreated++;
+                    }
+                    // Start new item - remove the bullet/number prefix
+                    currentTitle = trimmedLine.replace(/^[-•*]\s*/, '').replace(/^\d+[.)]\s*/, '');
+                    currentDescription = '';
+                } else if (!currentTitle) {
+                    // First non-bullet line becomes the title
+                    currentTitle = trimmedLine;
+                } else {
+                    // Add to description
+                    currentDescription += (currentDescription ? '\n' : '') + trimmedLine;
+                }
+            });
+
+            // Don't forget the last item
+            if (currentTitle) {
+                createMigratedTodoItem(currentTitle, currentDescription);
+                itemsCreated++;
+            }
+
+            // If no items were created but there was text, create one item with all the text
+            if (itemsCreated === 0 && notesText) {
+                const firstLine = lines[0] || 'Gamla anteckningar';
+                const restOfText = lines.slice(1).join('\n');
+                createMigratedTodoItem(firstLine, restOfText);
+            }
+
+            // Clear old notes after migration
+            data.notes = '';
+            saveData();
+            console.log('Migration klar! Gamla anteckningar har konverterats till to-do items.');
+        }
+
+        function createMigratedTodoItem(title, description) {
+            // Check if this item already exists (avoid duplicates on reload)
+            const exists = data.todoItems.some(t => t.title === title && t.migratedFromNotes);
+            if (exists) return;
+
+            const todoItem = {
+                id: Date.now() + Math.random(),
+                title: title.substring(0, 100), // Limit title length
+                description: description,
+                completed: false,
+                archived: false,
+                createdAt: new Date().toISOString(),
+                migratedFromNotes: true
+            };
+
+            data.todoItems.push(todoItem);
         }
 
         // =====================================================
