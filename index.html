@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maskrosstallet - Schema & Administration v6.1</title>
+    <title>Maskrosstallet - Schema & Administration v6.2</title>
     
     <!-- Förhindra cachning -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -940,6 +940,224 @@
             color: #2e7d32;
         }
 
+        /* To-do list styles */
+        .todo-list {
+            max-width: 800px;
+        }
+
+        .todo-section {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .todo-section-header {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .todo-section-header.archive {
+            background: linear-gradient(135deg, var(--forest-light), var(--forest-medium));
+        }
+
+        .todo-section-header h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--forest-deep);
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .todo-section-header.archive h3 {
+            color: var(--white);
+        }
+
+        .todo-add-form {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--cream-dark);
+            background: var(--cream);
+        }
+
+        .todo-add-form input,
+        .todo-add-form textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--cream-dark);
+            border-radius: 8px;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .todo-add-form input:focus,
+        .todo-add-form textarea:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+
+        .todo-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--cream-dark);
+            transition: background 0.2s;
+        }
+
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+
+        .todo-item:hover {
+            background: var(--cream);
+        }
+
+        .todo-item.completed {
+            opacity: 0.6;
+        }
+
+        .todo-item-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+
+        .todo-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--forest-light);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            margin-top: 2px;
+        }
+
+        .todo-checkbox:hover {
+            border-color: var(--gold);
+            background: var(--cream);
+        }
+
+        .todo-checkbox.checked {
+            background: var(--forest-light);
+            border-color: var(--forest-light);
+        }
+
+        .todo-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .todo-content {
+            flex: 1;
+        }
+
+        .todo-title {
+            font-weight: 600;
+            color: var(--forest-deep);
+            margin-bottom: 0.25rem;
+        }
+
+        .todo-item.completed .todo-title {
+            text-decoration: line-through;
+            color: var(--forest-light);
+        }
+
+        .todo-summary {
+            color: var(--forest-medium);
+            font-size: 0.9rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .todo-item.expanded .todo-summary {
+            display: none;
+        }
+
+        .todo-full-text {
+            display: none;
+            color: var(--forest-medium);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            background: var(--cream);
+            border-radius: 8px;
+            white-space: pre-wrap;
+        }
+
+        .todo-item.expanded .todo-full-text {
+            display: block;
+        }
+
+        .todo-expand-btn {
+            color: var(--gold);
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+
+        .todo-expand-btn:hover {
+            color: var(--rust);
+        }
+
+        .todo-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .todo-delete-btn {
+            color: var(--rust);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .todo-delete-btn:hover {
+            background: rgba(166, 93, 63, 0.1);
+        }
+
+        .todo-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--forest-light);
+        }
+
+        .archive-toggle {
+            cursor: pointer;
+            color: var(--cream);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .archive-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .archive-content.open {
+            max-height: 2000px;
+        }
+
         /* Checkbox label styling */
         .checkbox-label {
             display: flex;
@@ -1388,7 +1606,7 @@
                     <span>Grundat 2022 • Gamlestaden</span>
                 </div>
             </div>
-            <div class="version-badge" id="version-badge">Version 6.1</div>
+            <div class="version-badge" id="version-badge">Version 6.2</div>
         </div>
     </header>
 
@@ -1572,7 +1790,7 @@
             <!-- Sub-tabs -->
             <div class="sub-tabs">
                 <button class="sub-tab active" onclick="showSubTab('kursinfo')">📚 Kursinfo</button>
-                <button class="sub-tab" onclick="showSubTab('notes')">📝 Anteckningar</button>
+                <button class="sub-tab" onclick="showSubTab('notes')">📋 To do list</button>
             </div>
 
             <!-- Kursinfo Sub-tab -->
@@ -1665,24 +1883,33 @@
                 </div>
             </div>
 
-            <!-- Notes Sub-tab -->
+            <!-- To do list Sub-tab -->
             <div id="subtab-notes" class="sub-tab-content">
-                <div class="notes-container">
-                    <div class="notes-card">
-                        <div class="notes-card-header">
-                            <h3>📝 Önskemål & Idéer</h3>
-                            <p>Skriv ner funktioner ni vill ha, förbättringar eller andra anteckningar</p>
+                <div class="todo-list">
+                    <!-- Active To-dos -->
+                    <div class="todo-section">
+                        <div class="todo-section-header">
+                            <h3>📋 To do list</h3>
                         </div>
-                        <div class="notes-card-body">
-                            <textarea id="notes-textarea" placeholder="Skriv era önskemål här...
+                        <div class="todo-add-form">
+                            <input type="text" id="todo-title-input" placeholder="Titel på uppgift...">
+                            <textarea id="todo-description-input" rows="2" placeholder="Beskrivning (valfritt)..."></textarea>
+                            <button class="btn btn-primary" onclick="addTodoItem()">+ Lägg till uppgift</button>
+                        </div>
+                        <div id="todo-items-container">
+                            <!-- To-do items will be rendered here -->
+                        </div>
+                    </div>
 
-Exempel:
-- Vi vill kunna skicka påminnelser via SMS
-- Det vore bra med en kalenderexport
-- Lägg till möjlighet att se historik över bokningar"></textarea>
-                            <div class="notes-actions">
-                                <span id="notes-saved-status"></span>
-                                <button class="btn btn-primary" onclick="saveNotes()">💾 Spara anteckningar</button>
+                    <!-- Archive Section -->
+                    <div class="todo-section">
+                        <div class="todo-section-header archive" onclick="toggleArchive()">
+                            <h3>📦 Arkiv</h3>
+                            <span class="archive-toggle" id="archive-toggle-text">▶ Visa (<span id="archive-count">0</span>)</span>
+                        </div>
+                        <div class="archive-content" id="archive-content">
+                            <div id="archive-items-container">
+                                <!-- Archived items will be rendered here -->
                             </div>
                         </div>
                     </div>
@@ -2123,7 +2350,7 @@ Exempel:
         // =====================================================
         // VERSION CONTROL - Ändra detta vid varje uppdatering
         // =====================================================
-        const APP_VERSION = "6.1";
+        const APP_VERSION = "6.2";
 
         // =====================================================
         // Firebase Initialization
@@ -2187,6 +2414,7 @@ Exempel:
             competitions: [],
             care: [],
             notes: '',
+            todoItems: [],
             settings: {
                 levels: ['Blå', 'Gul', 'Grön', 'Röd', 'Vit', 'Nybörjare Grupp', 'Prova på'],
                 horseTypes: ['A ponny', 'B ponny', 'C ponny', 'G Ponny', 'Storhäst'],
@@ -3361,6 +3589,7 @@ Exempel:
                         competitions: data.competitions,
                         care: data.care,
                         notes: data.notes,
+                        todoItems: data.todoItems,
                         settings: data.settings,
                         appVersion: APP_VERSION,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -3510,6 +3739,9 @@ Exempel:
                         if (loadedData.notes) {
                             data.notes = loadedData.notes;
                         }
+                        if (loadedData.todoItems) {
+                            data.todoItems = loadedData.todoItems;
+                        }
                         if (loadedData.settings) {
                             data.settings = loadedData.settings;
                         }
@@ -3553,6 +3785,9 @@ Exempel:
                 }
                 if (loadedData.notes) {
                     data.notes = loadedData.notes;
+                }
+                if (loadedData.todoItems) {
+                    data.todoItems = loadedData.todoItems;
                 }
                 if (loadedData.settings) {
                     data.settings = loadedData.settings;
@@ -4053,26 +4288,157 @@ Exempel:
         }
 
         function loadNotes() {
-            const textarea = document.getElementById('notes-textarea');
-            if (textarea && data.notes) {
-                textarea.value = data.notes;
+            // Now loads to-do items instead of textarea
+            renderTodoItems();
+        }
+
+        // =====================================================
+        // To-do List Functions
+        // =====================================================
+
+        function addTodoItem() {
+            const titleInput = document.getElementById('todo-title-input');
+            const descInput = document.getElementById('todo-description-input');
+
+            const title = titleInput.value.trim();
+            const description = descInput.value.trim();
+
+            if (!title) {
+                alert('Vänligen ange en titel för uppgiften');
+                return;
+            }
+
+            const todoItem = {
+                id: Date.now(),
+                title: title,
+                description: description,
+                completed: false,
+                archived: false,
+                createdAt: new Date().toISOString()
+            };
+
+            data.todoItems.push(todoItem);
+            saveData();
+            renderTodoItems();
+
+            // Clear inputs
+            titleInput.value = '';
+            descInput.value = '';
+        }
+
+        function toggleTodoComplete(id) {
+            const item = data.todoItems.find(t => t.id === id);
+            if (item) {
+                item.completed = !item.completed;
+                if (item.completed) {
+                    // Move to archive after short delay
+                    setTimeout(() => {
+                        item.archived = true;
+                        saveData();
+                        renderTodoItems();
+                    }, 500);
+                }
+                saveData();
+                renderTodoItems();
             }
         }
 
-        function saveNotes() {
-            const textarea = document.getElementById('notes-textarea');
-            data.notes = textarea.value;
-            saveData();
-            
-            // Show saved status
-            const status = document.getElementById('notes-saved-status');
-            status.textContent = '✅ Sparad!';
-            status.classList.add('saved');
-            
-            setTimeout(() => {
-                status.textContent = '';
-                status.classList.remove('saved');
-            }, 3000);
+        function restoreTodoItem(id) {
+            const item = data.todoItems.find(t => t.id === id);
+            if (item) {
+                item.completed = false;
+                item.archived = false;
+                saveData();
+                renderTodoItems();
+            }
+        }
+
+        function deleteTodoItem(id) {
+            if (confirm('Är du säker på att du vill ta bort denna uppgift?')) {
+                data.todoItems = data.todoItems.filter(t => t.id !== id);
+                saveData();
+                renderTodoItems();
+            }
+        }
+
+        function toggleTodoExpand(id) {
+            const element = document.getElementById(`todo-item-${id}`);
+            if (element) {
+                element.classList.toggle('expanded');
+                const btn = element.querySelector('.todo-expand-btn');
+                if (btn) {
+                    const isExpanded = element.classList.contains('expanded');
+                    btn.innerHTML = isExpanded ? '▲ Visa mindre' : '▼ Visa mer';
+                }
+            }
+        }
+
+        function toggleArchive() {
+            const content = document.getElementById('archive-content');
+            const toggleText = document.getElementById('archive-toggle-text');
+            content.classList.toggle('open');
+
+            const isOpen = content.classList.contains('open');
+            const archivedCount = data.todoItems.filter(t => t.archived).length;
+            toggleText.innerHTML = isOpen
+                ? `▼ Dölj (<span id="archive-count">${archivedCount}</span>)`
+                : `▶ Visa (<span id="archive-count">${archivedCount}</span>)`;
+        }
+
+        function renderTodoItems() {
+            const container = document.getElementById('todo-items-container');
+            const archiveContainer = document.getElementById('archive-items-container');
+            const archiveCount = document.getElementById('archive-count');
+
+            if (!container) return;
+
+            // Filter active and archived items
+            const activeItems = data.todoItems.filter(t => !t.archived);
+            const archivedItems = data.todoItems.filter(t => t.archived);
+
+            // Update archive count
+            if (archiveCount) {
+                archiveCount.textContent = archivedItems.length;
+            }
+
+            // Render active items
+            if (activeItems.length === 0) {
+                container.innerHTML = '<div class="todo-empty">Inga uppgifter att göra. Lägg till en ny uppgift ovan!</div>';
+            } else {
+                container.innerHTML = activeItems.map(item => renderTodoItemHTML(item, false)).join('');
+            }
+
+            // Render archived items
+            if (archiveContainer) {
+                if (archivedItems.length === 0) {
+                    archiveContainer.innerHTML = '<div class="todo-empty">Inga arkiverade uppgifter</div>';
+                } else {
+                    archiveContainer.innerHTML = archivedItems.map(item => renderTodoItemHTML(item, true)).join('');
+                }
+            }
+        }
+
+        function renderTodoItemHTML(item, isArchived) {
+            const hasDescription = item.description && item.description.length > 0;
+            const summary = hasDescription ? (item.description.length > 100 ? item.description.substring(0, 100) + '...' : item.description) : '';
+
+            return `
+                <div class="todo-item ${item.completed ? 'completed' : ''}" id="todo-item-${item.id}">
+                    <div class="todo-item-header">
+                        <div class="todo-checkbox ${item.completed ? 'checked' : ''}" onclick="event.stopPropagation(); ${isArchived ? `restoreTodoItem(${item.id})` : `toggleTodoComplete(${item.id})`}"></div>
+                        <div class="todo-content" onclick="toggleTodoExpand(${item.id})">
+                            <div class="todo-title">${item.title}</div>
+                            ${hasDescription ? `<div class="todo-summary">${summary}</div>` : ''}
+                            ${hasDescription ? `<div class="todo-full-text">${item.description}</div>` : ''}
+                            ${hasDescription ? `<span class="todo-expand-btn">▼ Visa mer</span>` : ''}
+                        </div>
+                        <div class="todo-item-actions">
+                            ${isArchived ? `<span class="todo-delete-btn" onclick="event.stopPropagation(); restoreTodoItem(${item.id})" title="Återställ">↩️</span>` : ''}
+                            <span class="todo-delete-btn" onclick="event.stopPropagation(); deleteTodoItem(${item.id})" title="Ta bort">🗑️</span>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         // =====================================================
