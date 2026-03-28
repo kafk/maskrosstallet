@@ -4109,7 +4109,9 @@ Exempel:
                 return `
                     <div class="care-card">
                         <div class="care-card-header">
-                            <span class="horse-emoji">🐴</span>
+                            <div class="horse-emoji" style="width:2.5rem;height:2.5rem;border-radius:50%;overflow:hidden;flex-shrink:0;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">
+                                ${horse && horse.photo ? `<img src="${horse.photo}" style="width:100%;height:100%;object-fit:cover;">` : '🐴'}
+                            </div>
                             <h4>${horse ? horse.name : 'Okänd häst'}</h4>
                         </div>
                         <div class="care-card-body">
