@@ -1951,6 +1951,12 @@
                         <option value="Prova på">Prova på</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>Grupp</label>
+                    <select id="member-group">
+                        <option value="">— Ingen grupp —</option>
+                    </select>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('member')">Avbryt</button>
@@ -2462,6 +2468,9 @@
                     document.getElementById('booking-date').value = formatDateForBooking(selectedDate);
                 }
             }
+            if (type === 'member') {
+                populateMemberGroupDropdown();
+            }
             if (type === 'group') {
                 populateGroupDropdowns();
             }
@@ -2526,35 +2535,54 @@
         }
 
         // Save functions
+        function populateMemberGroupDropdown(selectedGroupId) {
+            const sel = document.getElementById('member-group');
+            sel.innerHTML = '<option value="">— Ingen grupp —</option>' +
+                (data.groups || []).map(g => `<option value="${g.id}" ${g.id == selectedGroupId ? 'selected' : ''}>${g.name}</option>`).join('');
+        }
+
         function saveMember() {
             const editingId = document.getElementById('modal-member').dataset.editingId;
-            
+            const memberId = editingId ? parseInt(editingId) : Date.now();
+            const selectedGroupId = document.getElementById('member-group').value ? parseInt(document.getElementById('member-group').value) : null;
+
             const memberData = {
                 firstname: document.getElementById('member-firstname').value,
                 level: document.getElementById('member-level').value
             };
-            
+
             if (!memberData.firstname) {
                 alert('Vänligen fyll i namn');
                 return;
             }
 
-            if (editingId) {
-                // Edit existing member
-                const member = data.members.find(m => m.id === parseInt(editingId));
-                if (member) {
-                    Object.assign(member, memberData);
+            // Remove member from all groups first
+            (data.groups || []).forEach(g => {
+                if (g.memberIds) g.memberIds = g.memberIds.filter(id => id !== memberId);
+            });
+            // Add to selected group
+            if (selectedGroupId) {
+                const group = data.groups.find(g => g.id === selectedGroupId);
+                if (group) {
+                    if (!group.memberIds) group.memberIds = [];
+                    if (!group.memberIds.includes(memberId)) group.memberIds.push(memberId);
                 }
+            }
+
+            if (editingId) {
+                const member = data.members.find(m => m.id === memberId);
+                if (member) Object.assign(member, memberData);
                 delete document.getElementById('modal-member').dataset.editingId;
                 document.querySelector('#modal-member .modal-header h3').textContent = 'Lägg till medlem';
             } else {
-                // Add new member
-                memberData.id = Date.now();
+                memberData.id = memberId;
                 data.members.push(memberData);
             }
 
             closeModal('member');
             renderMembers();
+            renderGroups();
+            renderWishes();
             updateStats();
             saveData();
             clearForm('member');
@@ -3475,12 +3503,16 @@
             if (member) {
                 document.getElementById('member-firstname').value = member.firstname || '';
                 document.getElementById('member-level').value = member.level || 'Gul';
-                
+
                 // Store editing ID
                 document.getElementById('modal-member').dataset.editingId = id;
                 document.querySelector('#modal-member .modal-header h3').textContent = 'Redigera medlem';
-                
+
                 openModal('member');
+
+                // Pre-select current group
+                const currentGroup = (data.groups || []).find(g => g.memberIds && g.memberIds.includes(id));
+                populateMemberGroupDropdown(currentGroup ? currentGroup.id : null);
             }
         }
 
@@ -4051,13 +4083,13 @@
                         ${members.map(m => {
                             const wish = data.wishes ? data.wishes.find(w => w.memberId === m.id) : null;
                             return `
-                            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--cream);">
-                                <span style="font-weight:600;min-width:120px;">${m.firstname} ${m.lastname || ''}</span>
+                            <div style="padding:0.5rem 0;border-bottom:1px solid var(--cream);">
+                                <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.3rem;">${m.firstname} ${m.lastname || ''}</div>
                                 <input type="text"
                                     placeholder="Önska häst..."
                                     value="${wish ? wish.horse : ''}"
                                     onchange="saveWish(${m.id}, this.value)"
-                                    style="flex:1;padding:0.4rem 0.6rem;border:1px solid var(--cream);border-radius:6px;font-size:0.9rem;">
+                                    style="width:100%;box-sizing:border-box;padding:0.4rem 0.6rem;border:1px solid var(--cream);border-radius:6px;font-size:0.9rem;">
                             </div>`;
                         }).join('')}
                     </div>
