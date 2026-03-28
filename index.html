@@ -1924,6 +1924,10 @@ Exempel:
                     <label>Lärare</label>
                     <input type="text" id="course-teacher" placeholder="Ange lärare för kursen...">
                 </div>
+                <div class="form-group">
+                    <label>Hästar i kursen</label>
+                    <div id="course-horses-list" class="group-members-select"></div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('course')">Avbryt</button>
@@ -2243,6 +2247,9 @@ Exempel:
             if (type === 'member') {
                 populateMemberGroupDropdown();
             }
+            if (type === 'course') {
+                populateCourseHorses();
+            }
             if (type === 'group') {
                 populateGroupDropdowns();
             }
@@ -2429,16 +2436,31 @@ Exempel:
             saveData();
         }
 
+        function populateCourseHorses(selectedIds) {
+            const list = document.getElementById('course-horses-list');
+            if (!list) return;
+            list.innerHTML = (data.horses || []).map(h => `
+                <label class="group-member-checkbox ${selectedIds && selectedIds.includes(h.id) ? 'selected' : ''}">
+                    <input type="checkbox" value="${h.id}" ${selectedIds && selectedIds.includes(h.id) ? 'checked' : ''} onchange="this.parentElement.classList.toggle('selected',this.checked)">
+                    ${h.name}
+                </label>`).join('');
+        }
+
+        function getSelectedCourseHorses() {
+            return Array.from(document.querySelectorAll('#course-horses-list input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+        }
+
         function saveCourse() {
             const editingId = document.getElementById('modal-course').dataset.editingId;
-            
+
             const courseData = {
                 name: document.getElementById('course-name').value,
                 level: document.getElementById('course-level').value,
                 duration: parseInt(document.getElementById('course-duration').value),
                 maxParticipants: parseInt(document.getElementById('course-max').value),
                 type: document.getElementById('course-type').value,
-                teacher: document.getElementById('course-teacher').value
+                teacher: document.getElementById('course-teacher').value,
+                horseIds: getSelectedCourseHorses()
             };
 
             if (!courseData.name) {
@@ -2447,21 +2469,18 @@ Exempel:
             }
 
             if (editingId) {
-                // Edit existing course
                 const course = data.courses.find(c => c.id === parseInt(editingId));
-                if (course) {
-                    Object.assign(course, courseData);
-                }
+                if (course) Object.assign(course, courseData);
                 delete document.getElementById('modal-course').dataset.editingId;
                 document.querySelector('#modal-course .modal-header h3').textContent = 'Lägg till kurs';
             } else {
-                // Add new course
                 courseData.id = Date.now();
                 data.courses.push(courseData);
             }
 
             closeModal('course');
             renderCourses();
+            renderHorses();
             updateStats();
             saveData();
             clearForm('course');
@@ -2481,6 +2500,7 @@ Exempel:
             document.getElementById('modal-course').dataset.editingId = id;
             document.querySelector('#modal-course .modal-header h3').textContent = 'Redigera kurs';
             openModal('course');
+            populateCourseHorses(course.horseIds || []);
         }
 
         function deleteCourse(id) {
@@ -2910,7 +2930,9 @@ Exempel:
 
         function renderHorses() {
             const grid = document.getElementById('horses-grid');
-            grid.innerHTML = data.horses.map(h => `
+            grid.innerHTML = data.horses.map(h => {
+                const assignedCourses = (data.courses || []).filter(c => c.horseIds && c.horseIds.includes(h.id));
+                return `
                 <div class="card">
                     <div class="card-header">
                         <div class="card-avatar horse-avatar" style="overflow: hidden;">
@@ -2942,13 +2964,18 @@ Exempel:
                             <span class="detail-label">Lämplig för</span>
                             <span class="detail-value" style="font-size: 0.8rem;">${h.suitable && h.suitable.length > 0 ? h.suitable.join(', ') : '-'}</span>
                         </div>
+                        ${assignedCourses.length > 0 ? `
+                        <div class="detail-row" style="flex-direction:column;align-items:flex-start;gap:0.3rem;">
+                            <span class="detail-label">📚 Kurser</span>
+                            <span class="detail-value" style="font-size:0.8rem;">${assignedCourses.map(c => c.name).join(', ')}</span>
+                        </div>` : ''}
                     </div>
                     <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
                         <button class="btn btn-small btn-outline" onclick="editHorse(${h.id})">Redigera</button>
                         <button class="btn btn-small btn-danger" onclick="deleteHorse(${h.id})">Ta bort</button>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function renderCourses() {
@@ -2984,6 +3011,10 @@ Exempel:
                             </div>` : `<div class="course-info-row" style="color: var(--rust); font-style: italic;">
                                 <span>Ingen lärare tilldelad</span>
                             </div>`}
+                            ${(() => {
+                                const horses = (c.horseIds || []).map(id => { const h = data.horses.find(h => h.id === id); return h ? h.name : null; }).filter(Boolean);
+                                return horses.length > 0 ? `<div class="course-info-row" style="margin-top:0.5rem;flex-direction:column;align-items:flex-start;gap:0.3rem;"><span>🐴 Hästar:</span><div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.2rem;">${horses.map(n => `<span class="group-member-tag">${n}</span>`).join('')}</div></div>` : '';
+                            })()}
                         </div>
                         <div class="card-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
                             <button class="btn btn-small" onclick="editCourse(${c.id})">✏️ Redigera</button>
