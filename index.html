@@ -2001,39 +2001,16 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Typ</label>
-                        <select id="horse-type">
-                            <option value="A ponny">A ponny</option>
-                            <option value="B ponny">B ponny</option>
-                            <option value="C ponny">C ponny</option>
-                            <option value="G Ponny">G Ponny</option>
-                            <option value="Storhäst">Storhäst</option>
-                        </select>
+                        <select id="horse-type"></select>
                     </div>
                     <div class="form-group">
                         <label>Färg</label>
-                        <select id="horse-color">
-                            <option value="Brun">Brun</option>
-                            <option value="Ljusbrun">Ljusbrun</option>
-                            <option value="Svart">Svart</option>
-                            <option value="Vit">Vit</option>
-                            <option value="Grå">Grå</option>
-                            <option value="Fläckig">Fläckig</option>
-                        </select>
+                        <select id="horse-color"></select>
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Lämplig för nivåer</label>
-                    <select id="horse-suitable" multiple size="5">
-                        <option value="Nybörjare">Nybörjare</option>
-                        <option value="P1-P3">Ponny 1-3</option>
-                        <option value="P4-P5">Ponny 4-5</option>
-                        <option value="J1-J3">Junior 1-3</option>
-                        <option value="J4-J5">Junior 4-5</option>
-                        <option value="S1-S3">Senior 1-3</option>
-                        <option value="S4-S5">Senior 4-5</option>
-                        <option value="Hopp">Hoppning</option>
-                        <option value="Dressyr">Dressyr</option>
-                    </select>
+                    <select id="horse-suitable" multiple size="5"></select>
                     <small style="color: var(--forest-light);">Håll Ctrl/Cmd för flera val</small>
                 </div>
                 <div class="form-group">
@@ -2475,6 +2452,9 @@
             if (type === 'member') {
                 populateMemberGroupDropdown();
             }
+            if (type === 'horse') {
+                populateHorseModalOptions();
+            }
             if (type === 'course') {
                 populateCourseHorses();
             }
@@ -2662,6 +2642,16 @@
             renderTodayBookings();
             updateStats();
             saveData();
+        }
+
+        function populateHorseModalOptions(selectedType, selectedColor, selectedSuitable) {
+            const s = data.settings;
+            document.getElementById('horse-type').innerHTML =
+                (s.horseTypes || []).map(t => `<option value="${t}" ${t === selectedType ? 'selected' : ''}>${t}</option>`).join('');
+            document.getElementById('horse-color').innerHTML =
+                (s.horseColors || []).map(c => `<option value="${c}" ${c === selectedColor ? 'selected' : ''}>${c}</option>`).join('');
+            document.getElementById('horse-suitable').innerHTML =
+                (s.levels || []).map(l => `<option value="${l}" ${selectedSuitable && selectedSuitable.includes(l) ? 'selected' : ''}>${l}</option>`).join('');
         }
 
         function populateCourseHorses(selectedIds) {
@@ -3553,10 +3543,8 @@
                 document.getElementById('horse-name').value = horse.name || '';
                 document.getElementById('horse-breed').value = horse.breed || '';
                 document.getElementById('horse-age').value = horse.age || '';
-                document.getElementById('horse-type').value = horse.type || 'A ponny';
-                document.getElementById('horse-color').value = horse.color || 'Brun';
                 document.getElementById('horse-status').value = horse.status || 'Tillgänglig';
-                
+
                 // Set photo preview
                 const preview = document.getElementById('horse-photo-preview');
                 if (horse.photo) {
@@ -3564,18 +3552,14 @@
                 } else {
                     preview.innerHTML = '🐴';
                 }
-                
-                // Set suitable levels
-                const suitableSelect = document.getElementById('horse-suitable');
-                Array.from(suitableSelect.options).forEach(opt => {
-                    opt.selected = horse.suitable && horse.suitable.includes(opt.value);
-                });
-                
+
                 // Store editing ID
                 document.getElementById('modal-horse').dataset.editingId = id;
                 document.querySelector('#modal-horse .modal-header h3').textContent = 'Redigera häst';
-                
+
                 openModal('horse');
+                // Populate dropdowns from settings with current values pre-selected
+                populateHorseModalOptions(horse.type, horse.color, horse.suitable);
             }
         }
 
