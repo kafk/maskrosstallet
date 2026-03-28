@@ -1400,6 +1400,7 @@
             <li><button data-tab="horses">🐎 Hästar</button></li>
             <li><button data-tab="courses">📚 Kurser</button></li>
             <li><button data-tab="teachers">👨‍🏫 Lärare</button></li>
+            <li><button data-tab="wishes">⭐ Önska</button></li>
             <li><button data-tab="groups">👨‍👩‍👧‍👦 Grupper</button></li>
             <li><button data-tab="competitions">🏆 Tävling</button></li>
             <li><button data-tab="care">🩺 Vårdnad</button></li>
@@ -1530,6 +1531,14 @@
         </div>
 
         <!-- Groups Tab -->
+        <!-- Wishes Tab -->
+        <div id="wishes" class="tab-content">
+            <div class="section-header">
+                <h2>⭐ Önska häst</h2>
+            </div>
+            <div id="wishes-grid" class="card-grid"></div>
+        </div>
+
         <div id="groups" class="tab-content">
             <div class="section-header">
                 <h2>👨‍👩‍👧‍👦 Grupper</h2>
@@ -2186,6 +2195,7 @@ Exempel:
             teachers: [],
             competitions: [],
             care: [],
+            wishes: [],
             notes: '',
             settings: {
                 levels: ['Blå', 'Gul', 'Grön', 'Röd', 'Vit', 'Nybörjare Grupp', 'Prova på'],
@@ -3360,6 +3370,7 @@ Exempel:
                         teachers: data.teachers,
                         competitions: data.competitions,
                         care: data.care,
+                        wishes: data.wishes,
                         notes: data.notes,
                         settings: data.settings,
                         appVersion: APP_VERSION,
@@ -3507,6 +3518,9 @@ Exempel:
                         if (loadedData.care) {
                             data.care = loadedData.care;
                         }
+                        if (loadedData.wishes) {
+                            data.wishes = loadedData.wishes;
+                        }
                         if (loadedData.notes) {
                             data.notes = loadedData.notes;
                         }
@@ -3550,6 +3564,9 @@ Exempel:
                 }
                 if (loadedData.care) {
                     data.care = loadedData.care;
+                }
+                if (loadedData.wishes) {
+                    data.wishes = loadedData.wishes;
                 }
                 if (loadedData.notes) {
                     data.notes = loadedData.notes;
@@ -3659,6 +3676,7 @@ Exempel:
             renderTeachers();
             renderCompetitions();
             renderGroups();
+            renderWishes();
             renderCare();
             renderSchedule();
             renderTodayBookings();
@@ -3766,6 +3784,61 @@ Exempel:
                     </div>
                 `;
             }).join('');
+        }
+
+        function renderWishes() {
+            const grid = document.getElementById('wishes-grid');
+            if (!grid) return;
+
+            if (!data.members || data.members.length === 0) {
+                grid.innerHTML = `
+                    <div class="card" style="grid-column:1/-1;text-align:center;padding:2rem;">
+                        <p style="color:var(--forest-light);">Inga medlemmar tillagda än</p>
+                    </div>`;
+                return;
+            }
+
+            // Group members by group
+            const grouped = {};
+            data.members.forEach(m => {
+                const group = data.groups.find(g => g.memberIds && g.memberIds.includes(m.id));
+                const groupName = group ? group.name : 'Ingen grupp';
+                if (!grouped[groupName]) grouped[groupName] = [];
+                grouped[groupName].push(m);
+            });
+
+            grid.innerHTML = Object.entries(grouped).map(([groupName, members]) => `
+                <div class="group-card">
+                    <div class="group-card-header">
+                        <h4>👨‍👩‍👧‍👦 ${groupName}</h4>
+                    </div>
+                    <div class="group-card-body">
+                        ${members.map(m => {
+                            const wish = data.wishes ? data.wishes.find(w => w.memberId === m.id) : null;
+                            return `
+                            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--cream);">
+                                <span style="font-weight:600;min-width:120px;">${m.firstname} ${m.lastname || ''}</span>
+                                <input type="text"
+                                    placeholder="Önska häst..."
+                                    value="${wish ? wish.horse : ''}"
+                                    onchange="saveWish(${m.id}, this.value)"
+                                    style="flex:1;padding:0.4rem 0.6rem;border:1px solid var(--cream);border-radius:6px;font-size:0.9rem;">
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function saveWish(memberId, horse) {
+            if (!data.wishes) data.wishes = [];
+            const existing = data.wishes.find(w => w.memberId === memberId);
+            if (existing) {
+                existing.horse = horse;
+            } else {
+                data.wishes.push({ memberId, horse });
+            }
+            saveData();
         }
 
         function saveGroup() {
